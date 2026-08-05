@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_scanner">Scanner</string>
+    <string name="nav_history">Historique</string>
+    <string name="nav_map">Carte</string>
+    <string name="nav_visual">Scan AI</string>
+    <string name="nav_settings">Paramètres</string>
+    <string name="system_active">SYSTÈME ACTIF</string>
+    <string name="system_idle">SYSTÈME INACTIF</string>
+    <string name="meta_detected">LUNETTES META DÉTECTÉES</string>
+    <string name="detections">DÉTECTIONS</string>
+    <string name="stop_scan">ARRÊTER</string>
+    <string name="start_scan">LANCER</string>
+    <string name="riwayat_title">HISTORIQUE</string>
+    <string name="pengaturan_title">PARAMÈTRES</string>
+    <string name="dark_mode">Mode Sombre</string>
+    <string name="language">Langue</string>
+    <string name="error_no_email">Aucune application de messagerie trouvée.</string>
+</resources>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_scanner">Scanner</string>
+    <string name="nav_history">Riwayat</string>
+    <string name="nav_map">Peta</string>
+    <string name="nav_visual">AI Scan</string>
+    <string name="nav_settings">Pengaturan</string>
+    <string name="system_active">SISTEM AKTIF</string>
+    <string name="system_idle">SISTEM IDLE</string>
+    <string name="meta_detected">KACAMATA META TERDETEKSI</string>
+    <string name="detections">DETEKSI</string>
+    <string name="stop_scan">BERHENTI</string>
+    <string name="start_scan">MULAI PINDAI</string>
+    <string name="riwayat_title">RIWAYAT</string>
+    <string name="pengaturan_title">PENGATURAN</string>
+    <string name="dark_mode">Mode Gelap</string>
+    <string name="language">Bahasa</string>
+
+    <string name="premium_pkg">Perlindungan Premium</string>
+    <string name="remove_ads">Tingkatkan ke Premium</string>
+    <string name="premium_active">PREMIUM AKTIF</string>
+    <string name="by_circle_mesh">Oleh Circle Mesh Limited</string>
+
+    <string name="benefit_ads">Tidak ada iklan yang mengganggu</string>
+    <string name="benefit_background">Pemindaian latar belakang dengan peringatan prioritas</string>
+    <string name="benefit_zone">Mode Keamanan Zona untuk area sensitif</string>
+    <string name="benefit_chart">Analisis Tren Sinyal tingkat lanjut (Grafik RSSI)</string>
+    <string name="benefit_history">Penandaan lokasi lengkap dan riwayat tidak terbatas</string>
+    <string name="benefit_support">Dukungan prioritas dari tim Circle Mesh</string>
+
+    <string name="guide_welcome">Melindungi privasi Anda adalah misi kami. Ikuti panduan ini untuk menguasai Glasses Scanner.</string>
+    <string name="guide_1_title">1. Pemindai Real-time</string>
+    <string name="guide_1_desc">Pemindai menggunakan Bluetooth Low Energy (BLE) untuk mendeteksi kacamata pintar. Radar pusat memvisualisasikan pencarian sinyal. Ketuk perangkat apa pun untuk melihat tren sinyal tingkat lanjut.</string>
+    <string name="guide_2_title">2. Tingkat Kedekatan</string>
+    <string name="guide_2_desc">SANGAT DEKAT (&lt; 1m): Perangkat ada pada orang tepat di samping Anda. \nDEKAT (&lt; 3m): Perangkat berada dalam ruangan yang sama. \nJAUH (&gt; 5m): Sinyal lemah, kemungkinan di ruangan sebelah.</string>
+    <string name="guide_3_title">3. Pemindaian Visual AI</string>
+    <string name="guide_3_desc">Gunakan tab AI Scan untuk menemukan kamera tersembunyi. Arahkan kamera Anda ke kacamata seseorang; ini membantu Anda melihat kedipan LED kecil yang menunjukkan perekaman sedang berlangsung.</string>
+    <string name="guide_4_title">4. Keamanan Zona</string>
+    <string name="guide_4_desc">Aktifkan Mode Zona di area sensitif (ruang rapat, ruang ganti). Ini meningkatkan frekuensi pemindaian dan secara otomatis menandai setiap deteksi sebagai audit prioritas.</string>
+    <string name="guide_5_title">5. Penandaan Perangkat</string>
+    <string name="guide_5_desc">Mengenali kacamata teman? Gunakan ikon Edit untuk menandainya (misal: \"Ray-Ban milik Andi\"). Ini membantu Anda mengabaikan perangkat yang dikenal dan fokus pada ancaman yang tidak dikenal.</string>
+
+    <string name="guide_title">Panduan Pengguna</string>
+    <string name="privacy_title">Kebijakan Privasi</string>
+    <string name="contact_support">Hubungi Dukungan</string>
+    <string name="support_email">support@circlemesh.site</string>
+    <string name="no_history">Belum ada riwayat deteksi.</string>
+    <string name="last_meta_detection">DETEKSI META TERAKHIR</string>
+    <string name="unknown_device">PERANGKAT TIDAK DIKENAL</string>
+    <string name="proximity_immediate">SANGAT DEKAT</string>
+    <string name="proximity_near">DEKAT</string>
+    <string name="proximity_far">JAUH</string>
+    <string name="grant_access">BERI AKSES</string>
+    <string name="permission_req">IZIN DIPERLUKAN</string>
+    <string name="permission_desc">Untuk mendeteksi kacamata pintar di sekitar, kami memerlukan izin Bluetooth dan Lokasi.</string>
+    <string name="zone_security">Mode Keamanan Zona</string>
+    <string name="zone_active">KEAMANAN ZONA AKTIF</string>
+    <string name="vibrate_on_detect">Getar saat Terdeteksi</string>
+    <string name="signal_trend">TREN SINYAL (RSSI)</string>
+    <string name="identify_device">Identifikasi Perangkat</string>
+    <string name="save">SIMPAN</string>
+    <string name="cancel">BATAL</string>
+    <string name="zone_alert">PERINGATAN ZONA</string>
+    <string name="error_no_email">Aplikasi email tidak ditemukan.</string>
+</resources>

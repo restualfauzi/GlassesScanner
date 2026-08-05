@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_scanner">扫描仪</string>
+    <string name="nav_history">历史</string>
+    <string name="nav_map">地图</string>
+    <string name="nav_visual">AI 扫描</string>
+    <string name="nav_settings">设置</string>
+    <string name="system_active">系统激活</string>
+    <string name="system_idle">系统空闲</string>
+    <string name="meta_detected">检测到 Meta 眼镜</string>
+    <string name="detections">检测</string>
+    <string name="stop_scan">停止</string>
+    <string name="start_scan">开始扫描</string>
+    <string name="riwayat_title">历史记录</string>
+    <string name="pengaturan_title">设置</string>
+    <string name="dark_mode">深色模式</string>
+    <string name="language">语言</string>
+
+    <string name="premium_pkg">高级保护</string>
+    <string name="remove_ads">升级到高级版</string>
+    <string name="premium_active">高级版已激活</string>
+    <string name="by_circle_mesh">由 Circle Mesh Limited 提供</string>
+
+    <string name="benefit_ads">没有烦人的广告</string>
+    <string name="benefit_background">后台扫描与优先提醒</string>
+    <string name="benefit_zone">敏感区域的安全区域模式</string>
+    <string name="benefit_chart">高级信号趋势分析 (RSSI 图表)</string>
+    <string name="benefit_history">完整的地点标记和无限历史记录</string>
+    <string name="benefit_support">Circle Mesh 团队的优先支持</string>
+
+    <string name="guide_welcome">保护您的隐私是我们的使命。遵循此指南以掌握 Glasses Scanner。</string>
+    <string name="guide_1_title">1. 实时扫描仪</string>
+    <string name="guide_1_desc">扫描仪使用低功耗蓝牙 (BLE) 检测智能眼镜。中央雷达可视化信号搜索。点击任何设备以查看高级信号趋势。</string>
+    <string name="guide_2_title">2. 接近程度</string>
+    <string name="guide_2_desc">立即 (&lt; 1m): 设备就在您旁边的人身上。\n接近 (&lt; 3m): 设备在同一个房间内。\n远处 (&gt; 5m): 信号微弱，可能在隔壁房间。</string>
+    <string name="guide_3_title">3. AI 视觉扫描</string>
+    <string name="guide_3_desc">使用 AI 扫描选项卡查找隐藏的摄像头。将相机对准某人的眼镜；它能帮助您发现指示正在录制的微小 LED 闪烁。</string>
+    <string name="guide_4_title">4. 区域安全</string>
+    <string name="guide_4_desc">在敏感区域（会议室、更衣室）激活区域模式。它会增加扫描频率，并自动将每次检测标记为优先审核。</string>
+    <string name="guide_5_title">5. 设备标记</string>
+    <string name="guide_5_desc">识别出朋友的眼镜了？使用编辑图标进行标记（例如，“Andi 的雷朋眼镜”）。这可以帮助您忽略已知设备并专注于未知威胁。</string>
+
+    <string name="guide_title">用户指南</string>
+    <string name="privacy_title">隐私政策</string>
+    <string name="contact_support">联系支持</string>
+    <string name="support_email">support@circlemesh.site</string>
+    <string name="no_history">尚无检测历史。</string>
+    <string name="last_meta_detection">最后一次 Meta 检测</string>
+    <string name="unknown_device">未知设备</string>
+    <string name="proximity_immediate">立即</string>
+    <string name="proximity_near">接近</string>
+    <string name="proximity_far">远处</string>
+    <string name="grant_access">授予权限</string>
+    <string name="permission_req">需要权限</string>
+    <string name="permission_desc">为了检测附近的智能眼镜，我们需要蓝牙和位置权限。</string>
+    <string name="zone_security">区域安全模式</string>
+    <string name="zone_active">区域安全激活</string>
+    <string name="vibrate_on_detect">检测时震动</string>
+    <string name="signal_trend">信号趋势 (RSSI)</string>
+    <string name="identify_device">识别设备</string>
+    <string name="save">保存</string>
+    <string name="cancel">取消</string>
+    <string name="zone_alert">区域警报</string>
+    <string name="error_no_email">未找到电子邮件应用。</string>
+</resources>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_scanner">スキャナー</string>
+    <string name="nav_history">履歴</string>
+    <string name="nav_map">地図</string>
+    <string name="nav_visual">AIスキャン</string>
+    <string name="nav_settings">設定</string>
+    <string name="system_active">システム稼働中</string>
+    <string name="system_idle">待機中</string>
+    <string name="meta_detected">META眼鏡を検出</string>
+    <string name="detections">検出リスト</string>
+    <string name="stop_scan">停止</string>
+    <string name="start_scan">スキャン開始</string>
+    <string name="riwayat_title">履歴</string>
+    <string name="pengaturan_title">設定</string>
+    <string name="dark_mode">ダークモード</string>
+    <string name="language">言語</string>
+    <string name="error_no_email">メールアプリが見つかりません。</string>
+</resources>

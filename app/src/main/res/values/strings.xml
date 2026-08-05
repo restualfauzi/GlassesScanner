@@ -1,0 +1,67 @@
+<resources>
+    <string name="app_name">Glasses Scanner</string>
+    <string name="nav_scanner">Scanner</string>
+    <string name="nav_history">History</string>
+    <string name="nav_map">Map</string>
+    <string name="nav_visual">AI Scan</string>
+    <string name="nav_settings">Settings</string>
+    <string name="system_active">SYSTEM ACTIVE</string>
+    <string name="system_idle">SYSTEM IDLE</string>
+    <string name="meta_detected">META GLASSES DETECTED</string>
+    <string name="detections">DETECTIONS</string>
+    <string name="stop_scan">STOP</string>
+    <string name="start_scan">START SCAN</string>
+    <string name="riwayat_title">HISTORY</string>
+    <string name="pengaturan_title">SETTINGS</string>
+    <string name="dark_mode">Dark Mode</string>
+    <string name="language">Language</string>
+
+    <string name="premium_pkg">Premium Protection</string>
+    <string name="remove_ads">Upgrade to Premium</string>
+    <string name="premium_active">PREMIUM ACTIVE</string>
+    <string name="by_circle_mesh">By Circle Mesh Limited</string>
+
+    <!-- Premium Benefits -->
+    <string name="benefit_ads">No more annoying advertisements</string>
+    <string name="benefit_background">Background scan with priority alerts</string>
+    <string name="benefit_zone">Zone Security Mode for sensitive areas</string>
+    <string name="benefit_chart">Advanced Signal Trend analysis (RSSI Chart)</string>
+    <string name="benefit_history">Full location tagging and unlimited history</string>
+    <string name="benefit_support">Priority support from Circle Mesh team</string>
+
+    <!-- Detailed Guide -->
+    <string name="guide_welcome">Protecting your privacy is our mission. Follow this guide to master Glasses Scanner.</string>
+    <string name="guide_1_title">1. Real-time Scanner</string>
+    <string name="guide_1_desc">The scanner uses Bluetooth Low Energy (BLE) to detect smart glasses. The central Radar visualizes the signal search. Tap any device to see advanced signal trends.</string>
+    <string name="guide_2_title">2. Proximity Levels</string>
+    <string name="guide_2_desc">IMMEDIATE (&lt; 1m): The device is on a person right next to you. \nNEAR (&lt; 3m): The device is within the same room. \nFAR (&gt; 5m): Signal is weak, possibly in an adjacent room.</string>
+    <string name="guide_3_title">3. AI Visual Scan</string>
+    <string name="guide_3_desc">Use the AI Scan tab to find hidden cameras. Point your camera at someone\\\'s glasses; it helps you spot the tiny LED flicker that indicates a recording is in progress.</string>
+    <string name="guide_4_title">4. Zone Security</string>
+    <string name="guide_4_desc">Activate Zone Mode in sensitive areas (meeting rooms, changing rooms). It increases scan frequency and automatically tags every detection as a priority audit.</string>
+    <string name="guide_5_title">5. Device Tagging</string>
+    <string name="guide_5_desc">Identified a friend\\\'s glasses? Use the Edit icon to tag them (e.g., \"Andi\\\'s Ray-Bans\"). This helps you ignore known devices and focus on unknown threats.</string>
+
+    <string name="guide_title">User Guide</string>
+    <string name="privacy_title">Privacy Policy</string>
+    <string name="contact_support">Contact Support</string>
+    <string name="support_email">support@circlemesh.site</string>
+    <string name="no_history">No detection history yet.</string>
+    <string name="last_meta_detection">LAST META DETECTIONS</string>
+    <string name="unknown_device">UNKNOWN DEVICE</string>
+    <string name="proximity_immediate">IMMEDIATE</string>
+    <string name="proximity_near">NEAR</string>
+    <string name="proximity_far">FAR</string>
+    <string name="grant_access">GRANT ACCESS</string>
+    <string name="permission_req">PERMISSIONS REQUIRED</string>
+    <string name="permission_desc">To detect smart glasses nearby, we need Bluetooth and Location permissions.</string>
+    <string name="zone_security">Zone Security Mode</string>
+    <string name="zone_active">ZONE SECURITY ACTIVE</string>
+    <string name="vibrate_on_detect">Vibrate on Detection</string>
+    <string name="signal_trend">SIGNAL TREND (RSSI)</string>
+    <string name="identify_device">Identify Device</string>
+    <string name="save">SAVE</string>
+    <string name="cancel">CANCEL</string>
+    <string name="zone_alert">ZONE ALERT</string>
+    <string name="error_no_email">No email application found.</string>
+</resources>
