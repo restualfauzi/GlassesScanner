@@ -28,6 +28,9 @@
     <string name="benefit_chart">Advanced Signal Trend analysis (RSSI Chart)</string>
     <string name="benefit_history">Full location tagging and unlimited history</string>
     <string name="benefit_support">Priority support from Circle Mesh team</string>
+    <string name="benefit_priority">Early access to new device signatures</string>
+    <string name="benefit_export">Export detection logs to CSV/PDF</string>
+    <string name="benefit_unlimited">Unlimited map markers and audit logs</string>
 
     <!-- Detailed Guide -->
     <string name="guide_welcome">Protecting your privacy is our mission. Follow this guide to master Glasses Scanner.</string>
@@ -61,7 +64,18 @@
     <string name="signal_trend">SIGNAL TREND (RSSI)</string>
     <string name="identify_device">Identify Device</string>
     <string name="save">SAVE</string>
-    <string name="cancel">CANCEL</string>
+    <string name="cancel">Cancel</string>
     <string name="zone_alert">ZONE ALERT</string>
     <string name="error_no_email">No email application found.</string>
+    <string name="ai_scan_how_to">Point your camera at the glasses. Look for a tiny LED light flicker on the frame. If a light is on, the glasses are recording.</string>
+    <string name="ai_scan_guide_title">AI Scan Guide</string>
+    <string name="ai_scanning_label">SCANNING FOR RECORDING LED…</string>
+    <string name="torch">Torch</string>
+    <string name="heatmap">Heatmap</string>
+    <string name="sound_alert">Sound Alert</string>
+    <string name="rate_app">Rate App</string>
+    <string name="device_library">Device Library</string>
+    <string name="scan_sensitivity">Scan Sensitivity</string>
+    <string name="not_a_glasses">NOT A GLASSES</string>
+    <string name="report_sent">Report sent. Thank you!</string>
 </resources>

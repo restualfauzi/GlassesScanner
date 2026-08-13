@@ -19,6 +19,10 @@ class SettingsManager(private val context: Context) {
     private val PREMIUM_KEY = booleanPreferencesKey("is_premium")
     private val LANGUAGE_KEY = stringPreferencesKey("language_code")
     private val DEVICE_TAGS_KEY = stringPreferencesKey("device_tags")
+    private val ONBOARDING_COMPLETED_KEY = booleanPreferencesKey("onboarding_completed")
+    private val IGNORED_DEVICES_KEY = stringPreferencesKey("ignored_devices")
+    private val SCAN_SENSITIVITY_KEY = stringPreferencesKey("scan_sensitivity") // "LOW", "MEDIUM", "HIGH")
+    private val STALKER_DETECTION_KEY = booleanPreferencesKey("stalker_detection_enabled")
 
     val isDarkMode: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[DARK_MODE_KEY] ?: false
@@ -47,6 +51,27 @@ class SettingsManager(private val context: Context) {
 
     val languageCode: Flow<String> = context.dataStore.data.map { preferences ->
         preferences[LANGUAGE_KEY] ?: "en"
+    }
+
+    val scanSensitivity: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[SCAN_SENSITIVITY_KEY] ?: "MEDIUM"
+    }
+
+    val hasCompletedOnboarding: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[ONBOARDING_COMPLETED_KEY] ?: false
+    }
+
+    val ignoredDevices: Flow<Set<String>> = context.dataStore.data.map { preferences ->
+        val json = preferences[IGNORED_DEVICES_KEY] ?: "[]"
+        try {
+            Json.decodeFromString<Set<String>>(json)
+        } catch (e: Exception) {
+            emptySet()
+        }
+    }
+
+    val stalkerDetectionEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[STALKER_DETECTION_KEY] ?: true
     }
 
     suspend fun setDarkMode(enabled: Boolean) {
@@ -89,6 +114,43 @@ class SettingsManager(private val context: Context) {
     suspend fun setLanguage(code: String) {
         context.dataStore.edit { preferences ->
             preferences[LANGUAGE_KEY] = code
+        }
+    }
+
+    suspend fun setScanSensitivity(sensitivity: String) {
+        context.dataStore.edit { preferences ->
+            preferences[SCAN_SENSITIVITY_KEY] = sensitivity
+        }
+    }
+
+    suspend fun setOnboardingCompleted(completed: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[ONBOARDING_COMPLETED_KEY] = completed
+        }
+    }
+
+    suspend fun setStalkerDetectionEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[STALKER_DETECTION_KEY] = enabled
+        }
+    }
+
+    suspend fun toggleIgnoreDevice(address: String) {
+        context.dataStore.edit { preferences ->
+            val currentJson = preferences[IGNORED_DEVICES_KEY] ?: "[]"
+            val currentSet = try {
+                Json.decodeFromString<Set<String>>(currentJson).toMutableSet()
+            } catch (e: Exception) {
+                mutableSetOf()
+            }
+            
+            if (currentSet.contains(address)) {
+                currentSet.remove(address)
+            } else {
+                currentSet.add(address)
+            }
+            
+            preferences[IGNORED_DEVICES_KEY] = Json.encodeToString(currentSet)
         }
     }
 }

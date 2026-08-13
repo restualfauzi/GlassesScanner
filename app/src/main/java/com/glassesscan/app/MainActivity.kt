@@ -33,9 +33,12 @@ import com.glassesscan.app.ui.scanner.ScannerScreen
 import com.glassesscan.app.ui.scanner.ScannerViewModel
 import com.glassesscan.app.ui.scanner.ScannerViewModelFactory
 import com.glassesscan.app.ui.visual.VisualAIScreen
+import com.glassesscan.app.ui.onboarding.WelcomeScreen
+import com.glassesscan.app.ui.audit.AuditScreen
 import com.glassesscan.app.ui.settings.*
 import com.glassesscan.app.ui.theme.GlassesScanTheme
 import com.glassesscan.app.util.*
+import com.google.android.play.core.review.ReviewManagerFactory
 
 class MainActivity : ComponentActivity() {
     private lateinit var billingManager: BillingManager
@@ -53,15 +56,19 @@ class MainActivity : ComponentActivity() {
         // Load Interstitial for later use
         AdMobHelper.loadInterstitial(this)
 
+        // Google Play Review API
+        val reviewManager = ReviewManagerFactory.create(this)
+        
         setContent {
             val settingsViewModel: SettingsViewModel = viewModel(
-                factory = SettingsViewModelFactory(this, billingManager)
+                factory = SettingsViewModelFactory(this, billingManager),
             )
             val isDarkMode by settingsViewModel.isDarkMode.collectAsState()
             val languageCode by settingsViewModel.languageCode.collectAsState()
 
             // Handle language change safely
             val context = androidx.compose.ui.platform.LocalContext.current
+            val configuration = androidx.compose.ui.platform.LocalConfiguration.current
             
             // 1. Create a wrapped context that forces the locale for all Compose children
             val localizedContext = remember(languageCode) {
@@ -69,14 +76,14 @@ class MainActivity : ComponentActivity() {
             }
 
             LaunchedEffect(languageCode) {
-                val locale = if (languageCode == "zh") java.util.Locale.CHINESE else java.util.Locale(languageCode)
+                val locale = if (languageCode == "zh") java.util.Locale.CHINESE else java.util.Locale.forLanguageTag(languageCode)
                 
                 // Compatibility for API < 24
                 val currentLocale = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    context.resources.configuration.locales[0]
+                    configuration.locales[0]
                 } else {
                     @Suppress("DEPRECATION")
-                    context.resources.configuration.locale
+                    configuration.locale
                 }
                 
                 if (currentLocale?.language != locale.language) {
@@ -92,17 +99,43 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            PermissionsHandler {
-                CompositionLocalProvider(androidx.compose.ui.platform.LocalContext provides localizedContext) {
-                    val themeDark = isDarkMode
-                    val isPremium by settingsViewModel.isPremium.collectAsState()
-                    
-                    GlassesScanTheme(darkTheme = themeDark) {
-                        Surface(
-                            modifier = Modifier.fillMaxSize().safeDrawingPadding(),
-                            color = MaterialTheme.colorScheme.background
-                        ) {
-                            MainNavigation(settingsViewModel, isPremium)
+            LaunchedEffect(Unit) {
+                // Request review after 3 successful launches (simplified check)
+                val request = reviewManager.requestReviewFlow()
+                request.addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        reviewManager.launchReviewFlow(this@MainActivity, task.result)
+                    }
+                }
+            }
+
+            val activityContext = androidx.compose.ui.platform.LocalContext.current
+            val isPremium by settingsViewModel.isPremium.collectAsState()
+            val hasCompletedOnboarding by settingsViewModel.hasCompletedOnboarding.collectAsState()
+
+            // 1. Wrap entire app in Localization Context for String resources
+            CompositionLocalProvider(androidx.compose.ui.platform.LocalContext provides localizedContext) {
+                val themeDark = isDarkMode
+                
+                GlassesScanTheme(darkTheme = themeDark) {
+                    Surface(
+                        modifier = Modifier.fillMaxSize().safeDrawingPadding(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        if (!hasCompletedOnboarding) {
+                            WelcomeScreen {
+                                settingsViewModel.setOnboardingCompleted(completed = true)
+                            }
+                        } else {
+                            // 2. Wrap Permissions in Activity Context to avoid "Permissions should be called in Activity" crash
+                            CompositionLocalProvider(androidx.compose.ui.platform.LocalContext provides activityContext) {
+                                PermissionsHandler {
+                                    // 3. Switch back to Localized Context for UI Navigation and Strings
+                                    CompositionLocalProvider(androidx.compose.ui.platform.LocalContext provides localizedContext) {
+                                        MainNavigation(settingsViewModel, isPremium)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -115,17 +148,25 @@ class MainActivity : ComponentActivity() {
 fun MainNavigation(settingsViewModel: SettingsViewModel, isPremium: Boolean) {
     val navController = rememberNavController()
     val viewModel: ScannerViewModel = viewModel(
-        factory = ScannerViewModelFactory(androidx.compose.ui.platform.LocalContext.current)
+        factory = ScannerViewModelFactory(androidx.compose.ui.platform.LocalContext.current),
     )
     
     val context = androidx.compose.ui.platform.LocalContext.current
+    val activity = remember(context) {
+        var ctx = context
+        while (ctx is android.content.ContextWrapper) {
+            if (ctx is android.app.Activity) break
+            ctx = ctx.baseContext
+        }
+        ctx as? android.app.Activity
+    }
 
     val items = listOf(
         Screen.Home,
         Screen.History,
         Screen.Map,
         Screen.VisualAI,
-        Screen.Settings
+        Screen.Settings,
     )
 
     Scaffold(
@@ -139,14 +180,16 @@ fun MainNavigation(settingsViewModel: SettingsViewModel, isPremium: Boolean) {
             if (showBottomBar) {
                 NavigationBar(
                     containerColor = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 0.dp // iOS style flat
+                    tonalElevation = 0.dp, // iOS style flat
                 ) {
                     items.forEach { screen ->
                         NavigationBarItem(
                             icon = { 
                                 Box {
                                     screen.icon?.let { Icon(it, contentDescription = null) }
-                                    if (screen == Screen.Map && !isPremium) {
+                                    val isMap = screen == Screen.Map
+                                    val notPremium = !isPremium
+                                    if (isMap && notPremium) {
                                         Icon(
                                             Icons.Default.Lock, 
                                             contentDescription = null,
@@ -169,21 +212,44 @@ fun MainNavigation(settingsViewModel: SettingsViewModel, isPremium: Boolean) {
                             ) },
                             selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                             onClick = {
-                                if (screen == Screen.Map && !isPremium) {
+                                val isMapScreen = screen == Screen.Map
+                                val needsPremium = !isPremium
+                                if (isMapScreen && needsPremium) {
                                     navController.navigate(Screen.Settings.route)
                                     return@NavigationBarItem
                                 }
                                 
-                                navController.navigate(screen.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
+                                // Show interstitial occasionally (1 in 3 chance) for free users when switching tabs
+                                val isFreeUser = !isPremium
+                                val shouldShowAd = (0..2).random() == 0
+                                if (isFreeUser && shouldShowAd) {
+                                    activity?.let {
+                                        AdMobHelper.showInterstitial(it) {
+                                            navController.navigate(screen.route) {
+                                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        }
+                                    } ?: run {
+                                        navController.navigate(screen.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
+                                } else {
+                                    navController.navigate(screen.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
                                 }
                             },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.primary,
                                 unselectedIconColor = MaterialTheme.colorScheme.secondary,
-                                indicatorColor = Color.Transparent
+                                indicatorColor = Color.Transparent,
                             )
                         )
                     }
@@ -204,7 +270,7 @@ fun MainNavigation(settingsViewModel: SettingsViewModel, isPremium: Boolean) {
                 val historyViewModel: HistoryViewModel = viewModel(
                     factory = HistoryViewModelFactory(context)
                 )
-                HistoryScreen(viewModel = historyViewModel)
+                HistoryScreen(viewModel = historyViewModel, isPremium = isPremium)
             }
             composable(Screen.Map.route) {
                 val context = androidx.compose.ui.platform.LocalContext.current
@@ -214,8 +280,9 @@ fun MainNavigation(settingsViewModel: SettingsViewModel, isPremium: Boolean) {
                 MapScreen(
                     historyViewModel = historyViewModel,
                     scannerViewModel = viewModel,
-                    onBack = { navController.popBackStack() }
-                )
+                ) {
+                    navController.popBackStack()
+                }
             }
             composable(Screen.VisualAI.route) {
                 VisualAIScreen(onBack = { navController.popBackStack() }, isPremium = isPremium)
@@ -223,16 +290,24 @@ fun MainNavigation(settingsViewModel: SettingsViewModel, isPremium: Boolean) {
             composable(Screen.Settings.route) {
                 SettingsScreen(
                     viewModel = settingsViewModel,
-                    onNavigate = { screen ->
-                        navController.navigate(screen.route)
-                    }
-                )
+                ) { screen ->
+                    navController.navigate(screen.route)
+                }
             }
             composable(Screen.Guide.route) {
-                GuideScreen(onBack = { navController.popBackStack() })
+                GuideScreen { navController.popBackStack() }
             }
             composable(Screen.PrivacyPolicy.route) {
-                PrivacyPolicyScreen(onBack = { navController.popBackStack() })
+                PrivacyPolicyScreen { navController.popBackStack() }
+            }
+            composable(Screen.TermsOfService.route) {
+                TermsOfServiceScreen { navController.popBackStack() }
+            }
+            composable(Screen.DeviceLibrary.route) {
+                DeviceLibraryScreen { navController.popBackStack() }
+            }
+            composable(Screen.Audit.route) {
+                AuditScreen { navController.popBackStack() }
             }
         }
     }

@@ -4,12 +4,14 @@ import android.app.Application
 import com.glassesscan.app.util.AdMobHelper
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.appopen.AppOpenAd
+import com.google.firebase.FirebaseApp
 
 class GlassesScanApp : Application() {
     private var appOpenAd: AppOpenAd? = null
 
     override fun onCreate() {
         super.onCreate()
+        FirebaseApp.initializeApp(this)
         AdMobHelper.initialize(this)
         loadAppOpenAd()
     }

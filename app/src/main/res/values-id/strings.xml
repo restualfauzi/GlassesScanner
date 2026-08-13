@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">Glasses Scanner</string>
     <string name="nav_scanner">Scanner</string>
     <string name="nav_history">Riwayat</string>
     <string name="nav_map">Peta</string>
@@ -27,6 +28,9 @@
     <string name="benefit_chart">Analisis Tren Sinyal tingkat lanjut (Grafik RSSI)</string>
     <string name="benefit_history">Penandaan lokasi lengkap dan riwayat tidak terbatas</string>
     <string name="benefit_support">Dukungan prioritas dari tim Circle Mesh</string>
+    <string name="benefit_priority">Akses awal ke database perangkat baru</string>
+    <string name="benefit_export">Ekspor log deteksi ke CSV/PDF</string>
+    <string name="benefit_unlimited">Penanda peta dan log audit tanpa batas</string>
 
     <string name="guide_welcome">Melindungi privasi Anda adalah misi kami. Ikuti panduan ini untuk menguasai Glasses Scanner.</string>
     <string name="guide_1_title">1. Pemindai Real-time</string>
@@ -59,7 +63,18 @@
     <string name="signal_trend">TREN SINYAL (RSSI)</string>
     <string name="identify_device">Identifikasi Perangkat</string>
     <string name="save">SIMPAN</string>
-    <string name="cancel">BATAL</string>
+    <string name="cancel">Batal</string>
     <string name="zone_alert">PERINGATAN ZONA</string>
     <string name="error_no_email">Aplikasi email tidak ditemukan.</string>
+    <string name="ai_scan_how_to">Arahkan kamera ke kacamata. Cari kedipan lampu LED kecil di bingkai. Jika lampu menyala, kacamata sedang merekam.</string>
+    <string name="ai_scan_guide_title">Panduan AI Scan</string>
+    <string name="ai_scanning_label">MEMINDAI LED PEREKAMAN…</string>
+    <string name="torch">Senter</string>
+    <string name="heatmap">Heatmap</string>
+    <string name="sound_alert">Peringatan Suara</string>
+    <string name="rate_app">Beri Rating</string>
+    <string name="device_library">Pustaka Perangkat</string>
+    <string name="scan_sensitivity">Sensitivitas Pindai</string>
+    <string name="not_a_glasses">BUKAN KACAMATA</string>
+    <string name="report_sent">Laporan dikirim. Terima kasih!</string>
 </resources>

@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class BillingManager(
     private val context: Context,
@@ -17,7 +18,13 @@ class BillingManager(
 
     private val billingClient = BillingClient.newBuilder(context)
         .setListener(this)
-        .enablePendingPurchases()
+        .enablePendingPurchases(
+            PendingPurchasesParams.newBuilder()
+                .enableOneTimeProducts()
+                .enablePrepaidPlans()
+                .build()
+        )
+        .enableAutoServiceReconnection()
         .build()
 
     private val _isBillingReady = MutableStateFlow(false)
@@ -46,7 +53,9 @@ class BillingManager(
             }
 
             override fun onBillingServiceDisconnected() {
-                startConnection()
+                // Connection lost, the library handles reconnection if enableAutoServiceReconnection is used.
+                // However, startConnection should only be called once.
+                // No-op here if auto-reconnection is enabled, or implement retry logic.
             }
         })
     }
@@ -63,15 +72,24 @@ class BillingManager(
             .setProductList(productList)
             .build()
 
-        billingClient.queryProductDetailsAsync(params) { billingResult, productDetailsList ->
-            if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                val productDetails = productDetailsList.find { it.productId == SUBSCRIPTION_ID }
-                // Get the first offer's formatted price (typically the base plan)
-                val price = productDetails?.subscriptionOfferDetails?.firstOrNull()?.pricingPhases?.pricingPhaseList?.firstOrNull()?.formattedPrice
-                _premiumPrice.value = price
-                println("Billing: Fetched subscription price: $price")
-            } else {
-                println("Billing: Failed to fetch subscription details: ${billingResult.debugMessage}")
+        scope.launch {
+            try {
+                // Using KTX suspend extension
+                val productDetailsResult = withContext(Dispatchers.IO) {
+                    billingClient.queryProductDetails(params)
+                }
+                
+                if (productDetailsResult.billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                    val productDetails = productDetailsResult.productDetailsList?.find { it.productId == SUBSCRIPTION_ID }
+                    // Get the first offer's formatted price (typically the base plan)
+                    val price = productDetails?.subscriptionOfferDetails?.firstOrNull()?.pricingPhases?.pricingPhaseList?.firstOrNull()?.formattedPrice
+                    _premiumPrice.value = price
+                    println("Billing: Fetched subscription price: $price")
+                } else {
+                    println("Billing: Failed to fetch subscription details: ${productDetailsResult.billingResult.debugMessage}")
+                }
+            } catch (e: Exception) {
+                println("Billing: Exception fetching product details: ${e.message}")
             }
         }
     }
@@ -83,15 +101,22 @@ class BillingManager(
             .setProductType(BillingClient.ProductType.SUBS)
             .build()
 
-        billingClient.queryPurchasesAsync(params) { billingResult, purchases ->
-            if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                val hasPremium = purchases.any { purchase ->
-                    purchase.products.contains(SUBSCRIPTION_ID) && 
-                    purchase.purchaseState == Purchase.PurchaseState.PURCHASED
+        scope.launch {
+            try {
+                // Using KTX suspend extension
+                val purchasesResult = withContext(Dispatchers.IO) {
+                    billingClient.queryPurchasesAsync(params)
                 }
-                scope.launch {
+                
+                if (purchasesResult.billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                    val hasPremium = purchasesResult.purchasesList.any { purchase ->
+                        purchase.products.contains(SUBSCRIPTION_ID) && 
+                        purchase.purchaseState == Purchase.PurchaseState.PURCHASED
+                    }
                     settingsManager.setPremium(hasPremium)
                 }
+            } catch (e: Exception) {
+                println("Billing: Exception querying purchases: ${e.message}")
             }
         }
     }
@@ -108,24 +133,33 @@ class BillingManager(
             .setProductList(productList)
             .build()
 
-        billingClient.queryProductDetailsAsync(params) { billingResult, productDetailsList ->
-            if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                val productDetails = productDetailsList.find { it.productId == SUBSCRIPTION_ID }
-                val offerToken = productDetails?.subscriptionOfferDetails?.firstOrNull()?.offerToken
-                
-                if (productDetails != null && offerToken != null) {
-                    val billingFlowParams = BillingFlowParams.newBuilder()
-                        .setProductDetailsParamsList(
-                            listOf(
-                                BillingFlowParams.ProductDetailsParams.newBuilder()
-                                    .setProductDetails(productDetails)
-                                    .setOfferToken(offerToken)
-                                    .build()
-                            )
-                        )
-                        .build()
-                    billingClient.launchBillingFlow(activity, billingFlowParams)
+        scope.launch {
+            try {
+                val productDetailsResult = withContext(Dispatchers.IO) {
+                    billingClient.queryProductDetails(params)
                 }
+                
+                if (productDetailsResult.billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                    val productDetails = productDetailsResult.productDetailsList?.find { it.productId == SUBSCRIPTION_ID }
+                    val offerToken = productDetails?.subscriptionOfferDetails?.firstOrNull()?.offerToken
+                    
+                    if (productDetails != null && offerToken != null) {
+                        val productDetailsParamsList = listOf(
+                            BillingFlowParams.ProductDetailsParams.newBuilder()
+                                .setProductDetails(productDetails)
+                                .setOfferToken(offerToken)
+                                .build()
+                        )
+                        
+                        val billingFlowParams = BillingFlowParams.newBuilder()
+                            .setProductDetailsParamsList(productDetailsParamsList)
+                            .build()
+                        
+                        billingClient.launchBillingFlow(activity, billingFlowParams)
+                    }
+                }
+            } catch (e: Exception) {
+                println("Billing: Exception launching purchase flow: ${e.message}")
             }
         }
     }
@@ -140,19 +174,18 @@ class BillingManager(
 
     private fun handlePurchase(purchase: Purchase) {
         if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
-            if (!purchase.isAcknowledged) {
-                val acknowledgePurchaseParams = AcknowledgePurchaseParams.newBuilder()
-                    .setPurchaseToken(purchase.purchaseToken)
-                    .build()
-                billingClient.acknowledgePurchase(acknowledgePurchaseParams) { billingResult ->
-                    if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                        scope.launch {
-                            settingsManager.setPremium(true)
-                        }
+            scope.launch {
+                if (!purchase.isAcknowledged) {
+                    val acknowledgePurchaseParams = AcknowledgePurchaseParams.newBuilder()
+                        .setPurchaseToken(purchase.purchaseToken)
+                        .build()
+                    val billingResult = withContext(Dispatchers.IO) {
+                        billingClient.acknowledgePurchase(acknowledgePurchaseParams)
                     }
-                }
-            } else {
-                scope.launch {
+                    if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                        settingsManager.setPremium(true)
+                    }
+                } else {
                     settingsManager.setPremium(true)
                 }
             }

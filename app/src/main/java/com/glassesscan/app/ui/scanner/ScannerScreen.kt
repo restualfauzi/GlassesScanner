@@ -19,10 +19,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.glassesscan.app.R
+import androidx.compose.material.icons.filled.Warning
 import com.glassesscan.app.ui.scanner.components.DeviceItem
 import com.glassesscan.app.ui.scanner.components.MetaAlertCard
 import com.glassesscan.app.ui.scanner.components.RadarComponent
 import com.glassesscan.app.ui.scanner.components.SignalChartComponent
+import com.glassesscan.app.util.AdMobHelper
 import com.glassesscan.app.util.BannerAdView
 
 import android.content.Intent
@@ -78,6 +80,13 @@ fun ScannerScreen(viewModel: ScannerViewModel, isPremium: Boolean) {
                     actionIconContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 actions = {
+                    IconButton(onClick = { viewModel.toggleSoundAlert() }) {
+                        Icon(
+                            imageVector = if (uiState.soundAlertEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                            contentDescription = "Sound Alert",
+                            tint = if (uiState.soundAlertEnabled) Color(0xFF007AFF) else Color.Gray
+                        )
+                    }
                     IconButton(onClick = { 
                         if (isPremium) viewModel.toggleZoneSecurity() 
                         else {
@@ -147,7 +156,22 @@ fun ScannerScreen(viewModel: ScannerViewModel, isPremium: Boolean) {
 
                         // Control Button - Red Pill
                         Button(
-                            onClick = { if (uiState.isScanning) viewModel.stopScanning() else viewModel.startScanning() },
+                            onClick = { 
+                                if (uiState.isScanning) {
+                                    // Show ad when stopping scan (high profit moment)
+                                    if (!isPremium) {
+                                        (context as? android.app.Activity)?.let { act ->
+                                            AdMobHelper.showInterstitial(act) {
+                                                viewModel.stopScanning()
+                                            }
+                                        } ?: viewModel.stopScanning()
+                                    } else {
+                                        viewModel.stopScanning()
+                                    }
+                                } else {
+                                    viewModel.startScanning()
+                                }
+                            },
                             modifier = Modifier
                                 .fillMaxWidth(0.8f)
                                 .height(56.dp),
@@ -269,17 +293,59 @@ fun ScannerScreen(viewModel: ScannerViewModel, isPremium: Boolean) {
                             }
                             
                             Spacer(modifier = Modifier.height(12.dp))
-                            TextButton(
-                                onClick = { viewModel.selectDevice(null) },
-                                modifier = Modifier.align(Alignment.End)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("CLOSE ANALYSIS")
+                                val isIgnored = uiState.ignoredDevices.contains(device.address)
+                                var reported by remember { mutableStateOf(false) }
+                                
+                                if (!reported) {
+                                    TextButton(
+                                        onClick = { 
+                                            viewModel.reportFalsePositive(device)
+                                            reported = true
+                                        }
+                                    ) {
+                                        Text(stringResource(R.string.not_a_glasses), color = Color.Gray, style = MaterialTheme.typography.labelSmall)
+                                    }
+                                }
+
+                                TextButton(
+                                    onClick = { viewModel.toggleIgnoreDevice(device.address) }
+                                ) {
+                                    Text(if (isIgnored) "UNIGNORE" else "IGNORE", color = if (isIgnored) Color.Gray else Color(0xFFFF3B30))
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                TextButton(
+                                    onClick = { viewModel.selectDevice(null) }
+                                ) {
+                                    Text("CLOSE")
+                                }
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    // Stalker Alert Dialog
+    uiState.stalkerDetected?.let { stalker ->
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissStalkerAlert() },
+            icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFFF3B30)) },
+            title = { Text("STALKER ALERT") },
+            text = { 
+                Text("Device '${stalker.customTag ?: stalker.name ?: "Unknown"}' (${stalker.address}) has been following you for more than 5 minutes. Exercise caution.")
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.dismissStalkerAlert() }) {
+                    Text("I UNDERSTAND")
+                }
+            }
+        )
     }
 
     if (showTagDialog != null) {

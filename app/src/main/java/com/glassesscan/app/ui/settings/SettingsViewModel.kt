@@ -45,10 +45,22 @@ class SettingsViewModel(
         initialValue = "en"
     )
 
+    val scanSensitivity: StateFlow<String> = settingsManager.scanSensitivity.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = "MEDIUM"
+    )
+
     val premiumPrice: StateFlow<String?> = billingManager.premiumPrice.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = null
+    )
+
+    val hasCompletedOnboarding: StateFlow<Boolean> = settingsManager.hasCompletedOnboarding.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = true // Start as true to avoid flashing onboarding for old users
     )
 
     fun setDarkMode(enabled: Boolean) {
@@ -78,6 +90,18 @@ class SettingsViewModel(
     fun setLanguage(code: String) {
         viewModelScope.launch {
             settingsManager.setLanguage(code)
+        }
+    }
+
+    fun setScanSensitivity(sensitivity: String) {
+        viewModelScope.launch {
+            settingsManager.setScanSensitivity(sensitivity)
+        }
+    }
+
+    fun setOnboardingCompleted(completed: Boolean) {
+        viewModelScope.launch {
+            settingsManager.setOnboardingCompleted(completed)
         }
     }
 

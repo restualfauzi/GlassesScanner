@@ -37,6 +37,7 @@ fun SettingsScreen(
     val isPremium by viewModel.isPremium.collectAsState()
     val premiumPrice by viewModel.premiumPrice.collectAsState()
     val currentLang by viewModel.languageCode.collectAsState()
+    val scanSensitivity by viewModel.scanSensitivity.collectAsState()
     val context = LocalContext.current
     val noEmailError = stringResource(R.string.error_no_email)
 
@@ -58,7 +59,7 @@ fun SettingsScreen(
             )
         },
         bottomBar = {
-            // BannerAdView is hidden as all features are unlocked (Premium state)
+            BannerAdView(isPremium = isPremium)
         }
     ) { innerPadding ->
         LazyColumn(
@@ -118,6 +119,9 @@ fun SettingsScreen(
                             PremiumBenefitItem(stringResource(R.string.benefit_chart))
                             PremiumBenefitItem(stringResource(R.string.benefit_history))
                             PremiumBenefitItem(stringResource(R.string.benefit_support))
+                            PremiumBenefitItem(stringResource(R.string.benefit_priority))
+                            PremiumBenefitItem(stringResource(R.string.benefit_export))
+                            PremiumBenefitItem(stringResource(R.string.benefit_unlimited))
 
                             Spacer(modifier = Modifier.height(20.dp))
                             
@@ -196,6 +200,29 @@ fun SettingsScreen(
             }
             item {
                 iOSSettingsItem(
+                    title = stringResource(R.string.scan_sensitivity),
+                    icon = Icons.Default.Tune,
+                    iconColor = Color(0xFF34C759),
+                    trailing = {
+                        Text(
+                            text = scanSensitivity,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable {
+                                val next = when(scanSensitivity) {
+                                    "LOW" -> "MEDIUM"
+                                    "MEDIUM" -> "HIGH"
+                                    else -> "LOW"
+                                }
+                                viewModel.setScanSensitivity(next)
+                            }
+                        )
+                    }
+                )
+            }
+            item {
+                iOSSettingsItem(
                     title = stringResource(R.string.language),
                     icon = Icons.Default.Language,
                     iconColor = Color(0xFF007AFF),
@@ -207,6 +234,15 @@ fun SettingsScreen(
             // Support
             item { Spacer(modifier = Modifier.height(24.dp)) }
             item { SectionHeader("SUPPORT") }
+            item {
+                iOSSettingsItem(
+                    title = stringResource(R.string.device_library),
+                    icon = Icons.Default.AutoStories,
+                    iconColor = Color(0xFF5856D6),
+                    subtitle = "Learn about smart eyewear",
+                    onClick = { onNavigate(Screen.DeviceLibrary) }
+                )
+            }
             item {
                 iOSSettingsItem(
                     title = "Rate App",
@@ -232,6 +268,15 @@ fun SettingsScreen(
                             }
                         }
                     }
+                )
+            }
+            item {
+                iOSSettingsItem(
+                    title = "Privacy Audit",
+                    icon = Icons.Default.AssignmentTurnedIn,
+                    iconColor = Color(0xFF34C759),
+                    subtitle = "Complete your security check",
+                    onClick = { onNavigate(Screen.Audit) }
                 )
             }
             item {
@@ -280,11 +325,19 @@ fun SettingsScreen(
                     onClick = { onNavigate(Screen.PrivacyPolicy) }
                 )
             }
+            item {
+                iOSSettingsItem(
+                    title = "Terms of Service",
+                    icon = Icons.Default.Gavel,
+                    iconColor = Color(0xFF8E8E93),
+                    onClick = { onNavigate(Screen.TermsOfService) }
+                )
+            }
 
             item {
                 Spacer(modifier = Modifier.height(48.dp))
                 Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("VERSION 1.0.0", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    Text("VERSION 1.0.2", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     Text("© 2026 Circle Mesh Limited", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                 }
             }

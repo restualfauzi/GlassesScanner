@@ -79,7 +79,12 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
             )
             
             PrivacyContentSection(
-                "6. Contact Us",
+                "6. Data Retention",
+                "Since all data is stored locally, we do not have a retention period for your data on our servers. You can delete your detection history at any time through the 'Clear All' button in the History tab. Uninstalling the app will permanently remove all local data."
+            )
+            
+            PrivacyContentSection(
+                "7. Contact Us",
                 "If you have any questions regarding this policy or our privacy practices, please contact us at support@circlemesh.site. Developed by Circle Mesh Limited."
             )
 

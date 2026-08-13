@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.glassesscan.app.R
 import com.glassesscan.app.domain.model.DetectedDevice
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.ui.platform.LocalContext
 import com.glassesscan.app.ui.scanner.components.SignalIndicator
@@ -33,8 +35,9 @@ import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HistoryScreen(viewModel: HistoryViewModel) {
+fun HistoryScreen(viewModel: HistoryViewModel, isPremium: Boolean) {
     val history by viewModel.history.collectAsState()
+    val context = LocalContext.current
     
     var showTagDialog by remember { mutableStateOf<String?>(null) }
     var tagText by remember { mutableStateOf("") }
@@ -92,14 +95,39 @@ fun HistoryScreen(viewModel: HistoryViewModel) {
                     )
                     
                     if (history.isNotEmpty()) {
-                        TextButton(
-                            onClick = { showClearConfirm = true },
-                            contentPadding = PaddingValues(0.dp)
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Clear All", style = MaterialTheme.typography.labelLarge)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            TextButton(
+                                onClick = { 
+                                    if (isPremium) viewModel.exportHistoryToCsv(context)
+                                    else {
+                                        // Show premium required toast or similar
+                                        android.widget.Toast.makeText(context, "Premium Required for Export", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                contentPadding = PaddingValues(0.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = if (isPremium) Icons.Default.FileDownload else Icons.Default.Lock, 
+                                        contentDescription = null, 
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Export", style = MaterialTheme.typography.labelLarge)
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            TextButton(
+                                onClick = { showClearConfirm = true },
+                                contentPadding = PaddingValues(0.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Clear All", style = MaterialTheme.typography.labelLarge)
+                                }
                             }
                         }
                     }

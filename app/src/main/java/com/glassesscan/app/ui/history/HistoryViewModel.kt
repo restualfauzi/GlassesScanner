@@ -33,6 +33,51 @@ class HistoryViewModel(
             settingsManager.setDeviceTag(address, tag)
         }
     }
+
+    fun exportHistoryToCsv(context: android.content.Context) {
+        val currentHistory = history.value
+        if (currentHistory.isEmpty()) return
+
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val csvHeader = "Date,Time,Device Name,MAC Address,Signal (RSSI),Proximity,Is Meta\n"
+            val csvData = currentHistory.joinToString("\n") { device ->
+                val date = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(device.timestamp))
+                val time = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date(device.timestamp))
+                "${date},${time},${device.name ?: "Unknown"},${device.address},${device.rssi},${device.proximity},${device.isMetaGlasses}"
+            }
+            
+            val csvContent = csvHeader + csvData
+            
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                shareCsvFile(context, csvContent)
+            }
+        }
+    }
+
+    private fun shareCsvFile(context: android.content.Context, content: String) {
+        val fileName = "Glasses_Scanner_History_${System.currentTimeMillis()}.csv"
+        try {
+            val file = java.io.File(context.cacheDir, fileName)
+            file.writeText(content)
+            
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.provider",
+                file
+            )
+            
+            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = "text/csv"
+                putExtra(android.content.Intent.EXTRA_SUBJECT, "Glasses Scanner Detection Logs")
+                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            
+            context.startActivity(android.content.Intent.createChooser(intent, "Export Audit Logs"))
+        } catch (e: Exception) {
+            android.widget.Toast.makeText(context, "Export failed: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
 }
 
 class HistoryViewModelFactory(private val context: Context) : ViewModelProvider.Factory {

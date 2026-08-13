@@ -79,22 +79,38 @@ class BleScannerHelper(private val context: Context) {
     private fun isMetaGlasses(name: String?, result: ScanResult): Boolean {
         if (name == null) return false
         
-        val metaKeywords = listOf("Ray-Ban Meta", "Meta Glasses", "Ray-Ban Stories")
-        val containsKeyword = metaKeywords.any { name.contains(it, ignoreCase = true) }
+        val smartGlassesKeywords = listOf(
+            "Ray-Ban Meta", "Meta Glasses", "Ray-Ban Stories", "Meta View",
+            "XREAL", "Nreal", "Air 2", "Viture", "Rokid", "Mad Gaze",
+            "Snap Spectacles", "Bose Frames", "Echo Frames", "Amazon Eyewear",
+            "Huawei Eyewear", "Huawei Gentle", "Razer Anzu", "Lenovo Legion",
+            "Google Glass", "Solos", "Even Realities", "Frame AI", "Superlight"
+        )
+        val containsKeyword = smartGlassesKeywords.any { name.contains(it, ignoreCase = true) }
         
-        // Manufacturer Specific Data for Meta (Example ID: 0x0059 is Apple, 0x031B is Meta Platforms Inc)
-        // Meta Platforms, Inc. Manufacturer ID is 0x031B (795 decimal)
+        // Manufacturer Specific Data (IDs registered with Bluetooth SIG)
         val manufacturerData = result.scanRecord?.manufacturerSpecificData
-        var hasMetaManufacturerId = false
+        var hasMatchingManufacturerId = false
         if (manufacturerData != null) {
             for (i in 0 until manufacturerData.size()) {
-                if (manufacturerData.keyAt(i) == 0x031B) {
-                    hasMetaManufacturerId = true
+                val key = manufacturerData.keyAt(i)
+                if (key == 0x031B || // Meta Platforms, Inc.
+                    key == 0x05B4 || // Nreal related
+                    key == 0x0171 || // Amazon.com Services LLC (Echo Frames)
+                    key == 0x009E || // Bose Corporation (Bose Frames)
+                    key == 0x0059 || // Apple (Future Vision wearable detection)
+                    key == 0x004C || // Apple Inc.
+                    key == 0x02D3 || // Snap Inc. (Spectacles)
+                    key == 0x052B || // Lenovo
+                    key == 0x027D || // Huawei Technologies Co., Ltd.
+                    key == 0x0006    // Microsoft (HoloLens)
+                ) {
+                    hasMatchingManufacturerId = true
                     break
                 }
             }
         }
 
-        return containsKeyword || hasMetaManufacturerId
+        return containsKeyword || hasMatchingManufacturerId
     }
 }

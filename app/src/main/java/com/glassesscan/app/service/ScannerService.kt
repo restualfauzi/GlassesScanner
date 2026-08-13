@@ -65,37 +65,43 @@ class ScannerService : Service() {
                     println("Background scan error: ${e.message}")
                 }
                 .collect { devices ->
-                    val metaGlasses = devices.filter { it.isMetaGlasses }
-                    if (metaGlasses.isNotEmpty()) {
                     val now = System.currentTimeMillis()
                     val shouldVibrate = settingsManager.vibrateOnDetect.first()
                     val isZoneMode = settingsManager.zoneSecurityMode.first()
+                    val ignoredDevices = settingsManager.ignoredDevices.first()
 
-                    metaGlasses.forEach { metaDevice ->
-                        if (canSaveToHistory(metaDevice.address, now)) {
+                    devices.forEach { device ->
+                        // Determine if we should alert for this device
+                        val isIgnored = ignoredDevices.contains(device.address)
+                        val isThreat = (device.isMetaGlasses || isZoneMode) && !isIgnored
+                        
+                        if (isThreat && canSaveToHistory(device.address, now)) {
+                            lastSavedMap[device.address] = now
+                            
                             serviceScope.launch {
                                 try {
                                     val location = locationHelper.getLastLocation()
-                                    val deviceWithLoc = metaDevice.copy(
+                                    val deviceWithLoc = device.copy(
                                         latitude = location?.latitude,
                                         longitude = location?.longitude,
-                                        isZoneAlert = isZoneMode
+                                        isZoneAlert = isZoneMode && device.isMetaGlasses
                                     )
                                     historyManager.saveDetection(deviceWithLoc)
-                                    lastSavedMap[metaDevice.address] = now
 
                                     if (shouldVibrate) {
                                         triggerVibration()
                                     }
                                     
-                                    val title = if (isZoneMode) "CRITICAL: Zone Security Breach" else "Meta Glasses Detected!"
-                                    showDetectionNotification(title, "A pair of smart glasses is very close to you.")
+                                    val title = if (isZoneMode && !device.isMetaGlasses) "Device Detected in Zone" 
+                                               else if (isZoneMode) "CRITICAL: Zone Security Breach" 
+                                               else "Meta Glasses Detected!"
+                                    
+                                    showDetectionNotification(title, "A device has been identified nearby.")
                                 } catch (e: Exception) {}
                             }
                         }
                     }
                 }
-            }
         }
     }
 
