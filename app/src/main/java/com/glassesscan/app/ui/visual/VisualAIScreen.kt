@@ -39,6 +39,11 @@ import android.content.ContentValues
 import android.provider.MediaStore
 import android.graphics.*
 import androidx.compose.material.icons.filled.Camera
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageProxy
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.face.FaceDetection
+import com.google.mlkit.vision.face.FaceDetectorOptions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,6 +55,7 @@ fun VisualAIScreen(onBack: () -> Unit, isPremium: Boolean) {
     var showInstructions by remember { mutableStateOf(true) }
     var isTorchEnabled by remember { mutableStateOf(false) }
     var camera by remember { mutableStateOf<Camera?>(null) }
+    var faceDetected by remember { mutableStateOf(false) }
     
     val imageCapture = remember { ImageCapture.Builder().build() }
 
@@ -92,13 +98,42 @@ fun VisualAIScreen(onBack: () -> Unit, isPremium: Boolean) {
                         val preview = Preview.Builder().build().also {
                             it.setSurfaceProvider(previewView.surfaceProvider)
                         }
+                        
+                        // ML Kit Face Detection
+                        val faceDetector = FaceDetection.getClient(
+                            FaceDetectorOptions.Builder()
+                                .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
+                                .build()
+                        )
+                        
+                        val imageAnalysis = ImageAnalysis.Builder()
+                            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                            .build()
+                        
+                        imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(ctx)) { imageProxy ->
+                            val mediaImage = imageProxy.image
+                            if (mediaImage != null) {
+                                val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+                                faceDetector.process(image)
+                                    .addOnSuccessListener { faces ->
+                                        faceDetected = faces.isNotEmpty()
+                                    }
+                                    .addOnCompleteListener {
+                                        imageProxy.close()
+                                    }
+                            } else {
+                                imageProxy.close()
+                            }
+                        }
+
                         try {
                             cameraProvider.unbindAll()
                             camera = cameraProvider.bindToLifecycle(
                                 lifecycleOwner,
                                 CameraSelector.DEFAULT_BACK_CAMERA,
                                 preview,
-                                imageCapture
+                                imageCapture,
+                                imageAnalysis
                             )
                         } catch (e: Exception) {}
                     }, ContextCompat.getMainExecutor(ctx))
@@ -137,11 +172,11 @@ fun VisualAIScreen(onBack: () -> Unit, isPremium: Boolean) {
                 }
 
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)),
+                    colors = CardDefaults.cardColors(containerColor = if (faceDetected) Color(0xFFFF3B30).copy(alpha = 0.8f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)),
                     shape = MaterialTheme.shapes.extraLarge
                 ) {
                     Text(
-                        stringResource(R.string.ai_scanning_label),
+                        if (faceDetected) "WAJAH TERDETEKSI - MENGANALISIS KACAMATA..." else stringResource(R.string.ai_scanning_label),
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.ExtraBold,

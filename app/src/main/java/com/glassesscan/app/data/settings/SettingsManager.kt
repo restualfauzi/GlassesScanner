@@ -26,6 +26,11 @@ class SettingsManager(private val context: Context) {
     private val SOUND_ALERT_KEY = booleanPreferencesKey("sound_alert_enabled")
     private val AUTO_SAVE_HISTORY_KEY = booleanPreferencesKey("auto_save_history")
     private val ECO_SCAN_MODE_KEY = booleanPreferencesKey("eco_scan_mode")
+    
+    // Auto-Zone Security
+    private val AUTO_ZONE_LAT_KEY = androidx.datastore.preferences.core.floatPreferencesKey("auto_zone_lat")
+    private val AUTO_ZONE_LNG_KEY = androidx.datastore.preferences.core.floatPreferencesKey("auto_zone_lng")
+    private val AUTO_ZONE_RADIUS_KEY = androidx.datastore.preferences.core.floatPreferencesKey("auto_zone_radius")
 
     val ecoScanMode: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[ECO_SCAN_MODE_KEY] ?: false
@@ -88,6 +93,14 @@ class SettingsManager(private val context: Context) {
     val stalkerDetectionEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[STALKER_DETECTION_KEY] ?: true
     }
+    
+    val autoZoneLat: Flow<Float?> = context.dataStore.data.map { preferences ->
+        preferences[AUTO_ZONE_LAT_KEY]
+    }
+    
+    val autoZoneLng: Flow<Float?> = context.dataStore.data.map { preferences ->
+        preferences[AUTO_ZONE_LNG_KEY]
+    }
 
     suspend fun setDarkMode(enabled: Boolean) {
         context.dataStore.edit { preferences ->
@@ -104,6 +117,22 @@ class SettingsManager(private val context: Context) {
     suspend fun setZoneSecurityMode(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[ZONE_SECURITY_KEY] = enabled
+        }
+    }
+    
+    suspend fun setAutoZone(lat: Float, lng: Float) {
+        context.dataStore.edit { preferences ->
+            preferences[AUTO_ZONE_LAT_KEY] = lat
+            preferences[AUTO_ZONE_LNG_KEY] = lng
+            preferences[AUTO_ZONE_RADIUS_KEY] = 100f // 100 meters
+        }
+    }
+    
+    suspend fun clearAutoZone() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(AUTO_ZONE_LAT_KEY)
+            preferences.remove(AUTO_ZONE_LNG_KEY)
+            preferences.remove(AUTO_ZONE_RADIUS_KEY)
         }
     }
 

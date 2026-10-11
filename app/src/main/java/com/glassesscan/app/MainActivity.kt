@@ -443,6 +443,7 @@ fun MainNavigation(settingsViewModel: SettingsViewModel, isPremium: Boolean, int
             composable(Screen.Settings.route) {
                 SettingsScreen(
                     viewModel = settingsViewModel,
+                    scannerViewModel = viewModel,
                 ) { screen ->
                     navController.navigate(screen.route)
                 }

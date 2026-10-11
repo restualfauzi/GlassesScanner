@@ -186,10 +186,18 @@ class ScannerViewModel(
                 _uiState.update { it.copy(autoSaveHistory = autoSave) }
             }
         }
+        viewModelScope.launch {
+            settingsManager.autoZoneLat.combine(settingsManager.autoZoneLng) { lat, lng ->
+                if (lat != null && lng != null) Pair(lat, lng) else null
+            }.collect { zone ->
+                autoZone = zone
+            }
+        }
     }
 
     private var scanJob: Job? = null
     private var soundJob: Job? = null
+    private var autoZone: Pair<Float, Float>? = null
 
     private val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
 
@@ -290,7 +298,22 @@ class ScannerViewModel(
                             viewModelScope.launch(Dispatchers.IO) {
                                 try {
                                     val location = locationHelper.getLastLocation()
-                                    val isZoneMode = state.zoneSecurityMode
+                                    
+                                    // Check Auto-Zone
+                                    var isInAutoZone = false
+                                    if (location != null && autoZone != null) {
+                                        val results = FloatArray(1)
+                                        android.location.Location.distanceBetween(
+                                            location.latitude, location.longitude,
+                                            autoZone!!.first.toDouble(), autoZone!!.second.toDouble(),
+                                            results
+                                        )
+                                        if (results[0] <= 100f) { // 100 meters
+                                            isInAutoZone = true
+                                        }
+                                    }
+
+                                    val isZoneMode = state.zoneSecurityMode || isInAutoZone
                                     val isThreat = device.isMetaGlasses || isZoneMode
                                     
                                     val deviceWithLoc = device.copy(
@@ -371,6 +394,18 @@ class ScannerViewModel(
         val newState = !_uiState.value.soundAlertEnabled
         viewModelScope.launch {
             settingsManager.setSoundAlertEnabled(newState)
+        }
+    }
+    
+    fun setAutoZone(lat: Double, lng: Double) {
+        viewModelScope.launch {
+            settingsManager.setAutoZone(lat.toFloat(), lng.toFloat())
+        }
+    }
+    
+    fun clearAutoZone() {
+        viewModelScope.launch {
+            settingsManager.clearAutoZone()
         }
     }
 
@@ -457,6 +492,23 @@ class ScannerViewModel(
         }
         com.google.firebase.analytics.FirebaseAnalytics.getInstance(context)
             .logEvent("false_positive_report", params)
+    }
+
+    fun reportAsSmartGlasses(device: DetectedDevice) {
+        val dbRef = com.google.firebase.database.FirebaseDatabase.getInstance().getReference("crowdsource_reports")
+        val report = mapOf(
+            "address" to device.address,
+            "name" to (device.name ?: "Unknown"),
+            "timestamp" to System.currentTimeMillis()
+        )
+        dbRef.child(device.address.replace(":", "")).setValue(report)
+        
+        val params = android.os.Bundle().apply {
+            putString("device_address", device.address)
+            putString("device_name", device.name ?: "Unknown")
+        }
+        com.google.firebase.analytics.FirebaseAnalytics.getInstance(context)
+            .logEvent("crowdsource_smart_glasses", params)
     }
 
     fun stopScanning() {

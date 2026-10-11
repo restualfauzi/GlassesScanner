@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -119,6 +120,17 @@ fun MapScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = {
+                        val center = mapView.mapCenter
+                        scannerViewModel.setAutoZone(center.latitude, center.longitude)
+                        android.widget.Toast.makeText(context, "Auto-Zone Security (100m) Set!", android.widget.Toast.LENGTH_SHORT).show()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Shield,
+                            contentDescription = "Set Auto-Zone",
+                            tint = androidx.compose.ui.graphics.Color(0xFF34C759)
+                        )
+                    }
                     IconButton(onClick = { showHeatmap = !showHeatmap }) {
                         Icon(
                             imageVector = Icons.Default.Layers,

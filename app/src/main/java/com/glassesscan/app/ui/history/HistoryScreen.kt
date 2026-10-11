@@ -255,6 +255,64 @@ fun HistoryScreen(viewModel: HistoryViewModel, isPremium: Boolean) {
                 }
             }
 
+            // Analytics Dashboard Section
+            item {
+                if (history.isNotEmpty()) {
+                    val totalDetections = history.size
+                    val totalMeta = history.count { it.isMetaGlasses }
+                    
+                    // Most active hour
+                    val hourCounts = history.groupBy { 
+                        val cal = java.util.Calendar.getInstance()
+                        cal.timeInMillis = it.timestamp
+                        cal.get(java.util.Calendar.HOUR_OF_DAY)
+                    }.mapValues { it.value.size }
+                    
+                    val peakHour = hourCounts.maxByOrNull { it.value }?.key ?: 0
+                    val peakHourStr = String.format("%02d:00", peakHour)
+                    
+                    Column(modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp)) {
+                        Text(
+                            text = "Analytics Dashboard",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Card(
+                                modifier = Modifier.weight(1f),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text("Total Scan", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                                    Text("$totalDetections", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                }
+                            }
+                            Card(
+                                modifier = Modifier.weight(1f),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text("Smart Glasses", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                                    Text("$totalMeta", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color(0xFFFF3B30))
+                                }
+                            }
+                            Card(
+                                modifier = Modifier.weight(1f),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text("Peak Time", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                                    Text(peakHourStr, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color(0xFF007AFF))
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+
             item {
                 if (!isPremium) {
                     AdMobHelper.NativeAdView(isPremium = false)

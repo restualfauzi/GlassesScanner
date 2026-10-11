@@ -356,12 +356,24 @@ fun ScannerScreen(viewModel: ScannerViewModel, isPremium: Boolean) {
                     ) {
                         val isIgnored = uiState.ignoredDevices.contains(device.address)
                         var reported by remember { mutableStateOf(false) }
+                        val context = LocalContext.current
                         
-                        if (!reported) {
+                        if (!device.isMetaGlasses && !reported) {
+                            TextButton(
+                                onClick = { 
+                                    viewModel.reportAsSmartGlasses(device)
+                                    reported = true
+                                    Toast.makeText(context, context.getString(R.string.report_sent), Toast.LENGTH_SHORT).show()
+                                }
+                            ) {
+                                Text("Report as Smart Glasses", color = Color(0xFF007AFF), style = MaterialTheme.typography.labelSmall)
+                            }
+                        } else if (device.isMetaGlasses && !reported) {
                             TextButton(
                                 onClick = { 
                                     viewModel.reportFalsePositive(device)
                                     reported = true
+                                    Toast.makeText(context, context.getString(R.string.report_sent), Toast.LENGTH_SHORT).show()
                                 }
                             ) {
                                 Text(stringResource(R.string.not_a_glasses), color = Color.Gray, style = MaterialTheme.typography.labelSmall)

@@ -27,11 +27,13 @@ import com.glassesscan.app.R
 import com.glassesscan.app.util.AdMobHelper
 import com.glassesscan.app.util.findActivity
 import com.glassesscan.app.ui.navigation.Screen
+import com.glassesscan.app.ui.scanner.ScannerViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
+    scannerViewModel: ScannerViewModel? = null,
     onNavigate: (Screen) -> Unit
 ) {
     val isDarkMode by viewModel.isDarkMode.collectAsState()
@@ -286,6 +288,18 @@ fun SettingsScreen(
                                 viewModel.setScanSensitivity(next)
                             }
                         )
+                    }
+                )
+            }
+            item {
+                IOSSettingsItem(
+                    title = "Simulasikan Deteksi (Dummy Threat)",
+                    icon = Icons.Default.BugReport,
+                    iconColor = Color.Red,
+                    subtitle = "Uji coba visualisasi radar dan peringatan",
+                    onClick = { 
+                        scannerViewModel?.injectPlayStoreDemoDevices()
+                        onNavigate(Screen.Home) // Navigate back to scanner screen to see it
                     }
                 )
             }

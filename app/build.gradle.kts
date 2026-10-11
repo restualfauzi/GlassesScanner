@@ -87,6 +87,7 @@ dependencies {
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
     implementation("com.google.android.gms:play-services-wearable:20.0.1")
+    implementation("com.google.mlkit:face-detection:16.1.6")
     implementation(libs.playReview)
     implementation(libs.playReviewKtx)
     implementation(libs.coil.compose)
