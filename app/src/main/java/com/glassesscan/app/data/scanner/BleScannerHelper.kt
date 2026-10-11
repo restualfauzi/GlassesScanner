@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.callbackFlow
 class BleScannerHelper(private val context: Context) {
 
     @SuppressLint("MissingPermission")
-    fun startScanning(): Flow<DetectedDevice> = callbackFlow {
+    fun startScanning(isEcoMode: Boolean = false): Flow<DetectedDevice> = callbackFlow {
         val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         val adapter = bluetoothManager.adapter
         
@@ -53,13 +53,17 @@ class BleScannerHelper(private val context: Context) {
             }
         }
 
-        val settings = ScanSettings.Builder()
-            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-            .build()
+        val settingsBuilder = ScanSettings.Builder()
+        if (isEcoMode) {
+            settingsBuilder.setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
+                .setReportDelay(5000L) // 5 seconds batching for power saving
+        } else {
+            settingsBuilder.setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+        }
 
         // We could add filters here, but for a "Radar" feel, we scan all and filter in logic
         try {
-            scanner.startScan(null, settings, scanCallback)
+            scanner.startScan(null, settingsBuilder.build(), scanCallback)
         } catch (e: Exception) {
             channel.close(e)
             return@callbackFlow

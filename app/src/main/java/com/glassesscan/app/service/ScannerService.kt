@@ -37,9 +37,9 @@ class ScannerService : Service() {
         super.onCreate()
         bleScannerHelper = BleScannerHelper(this)
         wifiScannerHelper = WifiScannerHelper(this)
-        repository = ScannerRepositoryImpl(bleScannerHelper, wifiScannerHelper)
-        historyManager = HistoryManager(this)
         settingsManager = SettingsManager(this)
+        repository = ScannerRepositoryImpl(bleScannerHelper, wifiScannerHelper, settingsManager)
+        historyManager = HistoryManager(this)
         locationHelper = LocationHelper(this)
         vibrator = getSystemService(Vibrator::class.java)
         createNotificationChannel()
@@ -121,8 +121,13 @@ class ScannerService : Service() {
                                         "$deviceName was identified nearby. Signal strength: ${device.rssi} dBm."
                                     }
                                     
-                                    showDetectionNotification(title, message)
-                                    sendWearOSAlert(title, message)
+                                    // Rate limit notifikasi: jangan spam Pop-Up lebih dari sekali setiap 2 menit untuk ancaman dari alat yang sama
+                                    val lastNotif = lastSavedMap["NOTIF_${device.address}"] ?: 0L
+                                    if (now - lastNotif > 120_000L) { // 120,000 ms = 2 menit
+                                        lastSavedMap["NOTIF_${device.address}"] = now
+                                        showDetectionNotification(title, message)
+                                        sendWearOSAlert(title, message)
+                                    }
                                 } catch (e: Exception) {}
                             }
                         }
@@ -233,7 +238,10 @@ class ScannerService : Service() {
             .build()
 
         val manager = getSystemService(NotificationManager::class.java)
-        val notificationId = (System.currentTimeMillis() % 10000).toInt()
+        
+        // Gunakan ID statis atau ID berdasarkan address/kategori agar notifikasi menimpa yang lama 
+        // alih-alih menumpuk/spam notifikasi baru setiap kali (misal statis 999 untuk peringatan utama)
+        val notificationId = 999 
         manager.notify(notificationId, notification)
     }
 

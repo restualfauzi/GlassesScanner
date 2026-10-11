@@ -15,9 +15,9 @@ class ScannerViewModelFactory(private val context: Context) : ViewModelProvider.
         if (modelClass.isAssignableFrom(ScannerViewModel::class.java)) {
             val bleScannerHelper = BleScannerHelper(context.applicationContext)
             val wifiScannerHelper = WifiScannerHelper(context.applicationContext)
-            val repository = ScannerRepositoryImpl(bleScannerHelper, wifiScannerHelper)
-            val historyManager = HistoryManager(context.applicationContext)
             val settingsManager = SettingsManager(context.applicationContext)
+            val repository = ScannerRepositoryImpl(bleScannerHelper, wifiScannerHelper, settingsManager)
+            val historyManager = HistoryManager(context.applicationContext)
             val locationHelper = LocationHelper(context.applicationContext)
             @Suppress("UNCHECKED_CAST")
             return ScannerViewModel(

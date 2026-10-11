@@ -291,18 +291,6 @@ fun SettingsScreen(
                     }
                 )
             }
-            item {
-                IOSSettingsItem(
-                    title = "Simulasikan Deteksi (Dummy Threat)",
-                    icon = Icons.Default.BugReport,
-                    iconColor = Color.Red,
-                    subtitle = "Uji coba visualisasi radar dan peringatan",
-                    onClick = { 
-                        scannerViewModel?.injectPlayStoreDemoDevices()
-                        onNavigate(Screen.Home) // Navigate back to scanner screen to see it
-                    }
-                )
-            }
 
             // Support
             item { Spacer(modifier = Modifier.height(24.dp)) }

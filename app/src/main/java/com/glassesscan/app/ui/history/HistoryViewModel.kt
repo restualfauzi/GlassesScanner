@@ -35,48 +35,105 @@ class HistoryViewModel(
         }
     }
 
-    fun exportHistoryToCsv(context: android.content.Context) {
+    fun exportHistoryToPdf(context: android.content.Context) {
         val currentHistory = history.value
         if (currentHistory.isEmpty()) return
 
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            val csvHeader = "Date,Time,Device Name,MAC Address,Signal (RSSI),Proximity,Is Meta\n"
-            val csvData = currentHistory.joinToString("\n") { device ->
-                val date = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(device.timestamp))
-                val time = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date(device.timestamp))
-                "${date},${time},${device.name ?: "Unknown"},${device.address},${device.rssi},${device.proximity},${device.isMetaGlasses}"
-            }
-            
-            val csvContent = csvHeader + csvData
-            
-            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                shareCsvFile(context, csvContent)
-            }
-        }
-    }
-
-    private fun shareCsvFile(context: android.content.Context, content: String) {
-        val fileName = "Glasses_Scanner_History_${System.currentTimeMillis()}.csv"
-        try {
+            val fileName = "Privacy_Audit_Report_${System.currentTimeMillis()}.pdf"
             val file = java.io.File(context.cacheDir, fileName)
-            file.writeText(content)
-            
-            val uri = androidx.core.content.FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.provider",
-                file
-            )
-            
-            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                type = "text/csv"
-                putExtra(android.content.Intent.EXTRA_SUBJECT, "Glasses Scanner Detection Logs")
-                putExtra(android.content.Intent.EXTRA_STREAM, uri)
-                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+
+            try {
+                val pdfDocument = android.graphics.pdf.PdfDocument()
+                var pageInfo = android.graphics.pdf.PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4 Size
+                var page = pdfDocument.startPage(pageInfo)
+                var canvas = page.canvas
+                val paint = android.graphics.Paint()
+
+                // Header
+                paint.color = android.graphics.Color.BLUE
+                paint.textSize = 24f
+                paint.isFakeBoldText = true
+                canvas.drawText("Glasses Scanner - Privacy Audit Report", 50f, 50f, paint)
+
+                paint.color = android.graphics.Color.BLACK
+                paint.textSize = 14f
+                paint.isFakeBoldText = false
+                val dateStr = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+                canvas.drawText("Generated on: $dateStr", 50f, 80f, paint)
+                
+                canvas.drawLine(50f, 100f, 545f, 100f, paint)
+
+                // Table Header
+                paint.textSize = 12f
+                paint.isFakeBoldText = true
+                var yPos = 130f
+                canvas.drawText("Time", 50f, yPos, paint)
+                canvas.drawText("Device Name / MAC", 150f, yPos, paint)
+                canvas.drawText("Signal", 400f, yPos, paint)
+                canvas.drawText("Threat", 470f, yPos, paint)
+
+                canvas.drawLine(50f, 140f, 545f, 140f, paint)
+                yPos = 160f
+
+                paint.isFakeBoldText = false
+                currentHistory.forEach { device ->
+                    if (yPos > 800f) { // Page break
+                        pdfDocument.finishPage(page)
+                        pageInfo = android.graphics.pdf.PdfDocument.PageInfo.Builder(595, 842, 1).create()
+                        page = pdfDocument.startPage(pageInfo)
+                        canvas = page.canvas
+                        yPos = 50f
+                    }
+
+                    val time = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(device.timestamp))
+                    val threatLevel = if (device.isMetaGlasses) "HIGH" else "LOW"
+                    val deviceText = (device.name ?: "Unknown") + " (" + device.address + ")"
+                    
+                    canvas.drawText(time, 50f, yPos, paint)
+                    canvas.drawText(deviceText.take(40), 150f, yPos, paint)
+                    canvas.drawText("${device.rssi} dBm", 400f, yPos, paint)
+                    
+                    if (device.isMetaGlasses) {
+                        paint.color = android.graphics.Color.RED
+                        paint.isFakeBoldText = true
+                    }
+                    canvas.drawText(threatLevel, 470f, yPos, paint)
+                    
+                    paint.color = android.graphics.Color.BLACK
+                    paint.isFakeBoldText = false
+                    
+                    yPos += 25f
+                }
+
+                pdfDocument.finishPage(page)
+                
+                val outStream = java.io.FileOutputStream(file)
+                pdfDocument.writeTo(outStream)
+                pdfDocument.close()
+                outStream.close()
+
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    val uri = androidx.core.content.FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.provider",
+                        file
+                    )
+                    
+                    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                        type = "application/pdf"
+                        putExtra(android.content.Intent.EXTRA_SUBJECT, "Privacy Audit Report")
+                        putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    
+                    context.startActivity(android.content.Intent.createChooser(intent, "Export Audit Report"))
+                }
+            } catch (e: Exception) {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    android.widget.Toast.makeText(context, "Export failed: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                }
             }
-            
-            context.startActivity(android.content.Intent.createChooser(intent, "Export Audit Logs"))
-        } catch (e: Exception) {
-            android.widget.Toast.makeText(context, "Export failed: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 }

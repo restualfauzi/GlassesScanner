@@ -17,6 +17,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import kotlin.math.roundToInt
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,6 +28,7 @@ import com.glassesscan.app.R
 import com.glassesscan.app.util.AdMobHelper
 
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.text.style.TextAlign
 
 import androidx.camera.core.Camera
@@ -45,6 +48,8 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
 
+import com.glassesscan.app.data.scanner.EmfScannerHelper
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VisualAIScreen(onBack: () -> Unit, isPremium: Boolean) {
@@ -53,11 +58,24 @@ fun VisualAIScreen(onBack: () -> Unit, isPremium: Boolean) {
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
     
     var showInstructions by remember { mutableStateOf(true) }
+    var showEmfMode by remember { mutableStateOf(false) }
     var isTorchEnabled by remember { mutableStateOf(false) }
     var camera by remember { mutableStateOf<Camera?>(null) }
     var faceDetected by remember { mutableStateOf(false) }
     
     val imageCapture = remember { ImageCapture.Builder().build() }
+    
+    // EMF Logic
+    val emfHelper = remember { EmfScannerHelper(context) }
+    var emfValue by remember { mutableFloatStateOf(0f) }
+    
+    LaunchedEffect(showEmfMode) {
+        if (showEmfMode) {
+            emfHelper.getEmfFlow().collect { value ->
+                emfValue = value
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -69,6 +87,13 @@ fun VisualAIScreen(onBack: () -> Unit, isPremium: Boolean) {
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showEmfMode = !showEmfMode }) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "EMF Detector",
+                            tint = if (showEmfMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                     IconButton(onClick = { 
                         isTorchEnabled = !isTorchEnabled
                         camera?.cameraControl?.enableTorch(isTorchEnabled)
@@ -167,6 +192,33 @@ fun VisualAIScreen(onBack: () -> Unit, isPremium: Boolean) {
                                 style = MaterialTheme.typography.bodySmall,
                                 lineHeight = 18.sp
                             )
+                        }
+                    }
+                }
+
+                if (showEmfMode) {
+                    val emfLevel = (emfValue / 100f).coerceIn(0f, 1f)
+                    val emfColor = if (emfValue > 60f) Color(0xFFFF3B30) else if (emfValue > 40f) Color(0xFFFFCC00) else Color(0xFF34C759)
+                    val emfStatus = if (emfValue > 60f) "DANGER: HIGH EMF DETECTED (Hidden Camera?)" else "Safe: Normal Background EMF"
+                    
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Magnetic EMF Detector", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("${emfValue.roundToInt()} μT", style = MaterialTheme.typography.displayMedium, color = emfColor)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            LinearProgressIndicator(
+                                progress = { emfLevel },
+                                modifier = Modifier.fillMaxWidth().height(12.dp),
+                                color = emfColor,
+                                strokeCap = StrokeCap.Round
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(emfStatus, color = emfColor, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 }

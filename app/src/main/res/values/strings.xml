@@ -41,17 +41,17 @@
     <string name="benefit_unlimited">Unlimited map markers and audit logs</string>
 
     <!-- Detailed Guide -->
-    <string name="guide_welcome">Master Glasses Scanner to protect your personal space from hidden smart glasses, camera eyewear, and spy recording devices.</string>
-    <string name="guide_1_title">1. Real-Time Radar Scanner</string>
-    <string name="guide_1_desc">The central Radar uses Low-Latency BLE scanning to detect smart glasses nearby. Click any detected device to see its RSSI Signal Trend chart, category, and distance.</string>
-    <string name="guide_2_title">2. AI Visual Scan &amp; Evidence Capture</string>
-    <string name="guide_2_desc">Use AI Scan to inspect frames for tiny recording LED flickers. Toggle the Torch for low-light inspection and tap the Shutter button to save photo evidence directly to your gallery.</string>
-    <string name="guide_3_title">3. Top Screen Pop-Up Banner Alerts</string>
-    <string name="guide_3_desc">When a camera glasses signal is detected in the background, a high-priority Heads-Up Banner pops up at the top of your screen showing the exact device name and dBm signal strength.</string>
-    <string name="guide_4_title">4. Zone Security &amp; Sound Alerts</string>
-    <string name="guide_4_desc">Activate Zone Security in private areas (meeting rooms, changing rooms). It increases scan frequency, triggers audio alarms, and tags every signal as a priority audit.</string>
-    <string name="guide_5_title">5. History, CSV Export &amp; Device Tagging</string>
-    <string name="guide_5_desc">Filter detection history by ALL, SMART GLASSES, or SUSPICIOUS. Tap any entry to assign a custom tag (e.g., \'Andi\'s Ray-Bans\') and export CSV audit logs for security reports.</string>
+    <string name="guide_welcome">Master Glasses Scanner to protect your personal space from hidden smart glasses, camera eyewear, RTSP IP cameras, and spy recording devices.</string>
+    <string name="guide_1_title">1. Real-Time Radar Scanner &amp; GATT Deep Inspect</string>
+    <string name="guide_1_desc">The central Radar uses Low-Latency BLE scanning to detect smart glasses nearby. Use GATT Deep Inspect on suspicious unknown devices to uncover hidden manufacturer information.</string>
+    <string name="guide_2_title">2. AI Visual Scan, ML Kit &amp; Magnetic EMF Sensor</string>
+    <string name="guide_2_desc">AI Scan uses Google ML Kit face detection and camera frame inspection to check for recording LEDs. Toggle the Magnetic EMF Detector to locate hidden electronics and lenses behind mirrors or walls.</string>
+    <string name="guide_3_title">3. Network Deep Scan (RTSP IP Cameras)</string>
+    <string name="guide_3_desc">Wi-Fi Deep Scan sweeps local hotel or Airbnb networks to detect hidden IP cameras streaming video over RTSP ports (554, 8080).</string>
+    <string name="guide_4_title">4. Auto-Zone Security Perimeter</string>
+    <string name="guide_4_desc">Set a 100m Auto-Zone perimeter on the Tactical Map or toggle Zone Security in private areas for automatic background alerts and alarms.</string>
+    <string name="guide_5_title">5. History, PDF Export &amp; Crowdsource Reporting</string>
+    <string name="guide_5_desc">Analyze your scan history via the Analytics Dashboard, export formal PDF Privacy Audit Reports, and report unknown devices to the global community database.</string>
 
     <string name="guide_title">User Guide</string>
     <string name="privacy_title">Privacy Policy</string>
@@ -199,26 +199,26 @@
 
     <!-- Privacy Policy -->
     <string name="privacy_policy_main_title">Privacy Policy for Glasses Scanner</string>
-    <string name="privacy_last_updated">Last updated: September 18, 2026</string>
+    <string name="privacy_last_updated">Last updated: October 11, 2026</string>
     <string name="privacy_section_1_title">1. Privacy-First Architecture</string>
-    <string name="privacy_section_1_desc">Glasses Scanner is engineered with a strict \'Privacy-First\' philosophy. We do not collect, store, or transmit your personal identification information (PII) or scan results to remote servers. All Bluetooth signal analysis, device signatures, and history records remain 100% on your local device.</string>
-    <string name="privacy_section_2_title">2. Bluetooth &amp; Background Scanning</string>
-    <string name="privacy_section_2_desc">The app requires Bluetooth and Foreground Service permissions to perform real-time scanning for nearby camera glasses (such as Ray-Ban Meta, Snap Spectacles, XREAL, Even Realities G1, Viture, Rokid, Echo Frames, Lucyd, Huawei, Razer, Frame AI, InMo, and Spy Camera Glasses). Scanning data is processed locally in real-time to alert you of potential recording threats.</string>
+    <string name="privacy_section_1_desc">Glasses Scanner is engineered with a strict \'Privacy-First\' philosophy. We do not collect, store, or transmit your personal identification information (PII) or scan results to remote servers. All Bluetooth signal analysis, EMF magnetometer measurements, and history records remain 100% on your local device.</string>
+    <string name="privacy_section_2_title">2. Bluetooth, Wi-Fi &amp; Network Deep Scan</string>
+    <string name="privacy_section_2_desc">The app requires Bluetooth, Wi-Fi, and Foreground Service permissions to perform real-time scanning for nearby camera glasses (Ray-Ban Meta, Snap Spectacles, XREAL, Even Realities G1, Viture, Rokid, Echo Frames, Lucyd, Huawei, Razer, Frame AI, InMo, and Spy Camera Glasses) and hidden RTSP IP cameras on local networks. Crowdsource reports sent by users contain no personal data.</string>
     <string name="privacy_section_3_title">3. Location Data &amp; Tactical Map</string>
-    <string name="privacy_section_3_desc">Android OS mandates \'Location\' permission for Bluetooth Low Energy (BLE) scanning. Detection coordinates are stored locally on your device to display markers on your personal \'Map\' feature and are never uploaded or tracked by Circle Mesh Limited or third parties.</string>
-    <string name="privacy_section_4_title">4. Camera Access &amp; Evidence Capture</string>
-    <string name="privacy_section_4_desc">Camera access is requested solely for the \'AI Visual Scan\' feature to inspect recording LED indicators on suspicious frames. When you capture evidence photos, they are saved directly to your local device gallery (Pictures/GlassesScanner) and are never recorded or transmitted remotely.</string>
+    <string name="privacy_section_3_desc">Android OS mandates \'Location\' permission for Bluetooth Low Energy (BLE) scanning. Detection coordinates are stored locally on your device to display markers on your personal \'Map\' feature and configure Auto-Zone perimeters. Location data is never uploaded or tracked by Circle Mesh Limited or third parties.</string>
+    <string name="privacy_section_4_title">4. Camera, ML Kit &amp; Magnetic EMF Sensors</string>
+    <string name="privacy_section_4_desc">Camera access is requested solely for the \'AI Visual Scan\' feature using Google ML Kit on-device face analysis to inspect recording LED indicators on suspicious frames. Magnetic sensor data is processed strictly on-device to measure EMF fields. Evidence photos captured are saved directly to your local device gallery (Pictures/GlassesScanner) and are never transmitted remotely.</string>
     <string name="privacy_section_5_title">5. Advertising (Google AdMob)</string>
     <string name="privacy_section_5_desc">We use Google AdMob (Google Mobile Ads) for app monetization for free users. Google AdMob may collect device identifiers, IP addresses, and coarse location data to serve personalized or non-personalized ads in accordance with Google\'s Privacy Policy. Premium subscribers enjoy a 100% ad-free experience.</string>
-    <string name="privacy_section_6_title">6. Data Control &amp; CSV Export</string>
-    <string name="privacy_section_6_desc">Since all history logs are stored locally, you maintain complete control over your data. You can export your audit logs to CSV format or delete all detection records at any time using the \'Clear All\' button. Uninstalling the app permanently removes all local data.</string>
+    <string name="privacy_section_6_title">6. Data Control &amp; PDF Export</string>
+    <string name="privacy_section_6_desc">Since all history logs are stored locally, you maintain complete control over your data. You can export your audit logs to formal PDF format or delete all detection records at any time using the \'Clear All\' button. Uninstalling the app permanently removes all local data.</string>
     <string name="privacy_section_7_title">7. Contact Information</string>
     <string name="privacy_section_7_desc">If you have any questions regarding this Privacy Policy or app security, please contact us at support@circlemesh.site. Developed by Circle Mesh Limited.</string>
     <string name="privacy_copyright">© 2026 Circle Mesh Limited. All rights reserved.</string>
 
     <!-- Terms of Service -->
     <string name="tos_main_title">Terms of Service for Glasses Scanner</string>
-    <string name="tos_effective_date">Effective Date: September 18, 2026</string>
+    <string name="tos_effective_date">Effective Date: October 11, 2026</string>
     <string name="tos_section_1_title">1. Acceptance of Terms</string>
     <string name="tos_section_1_desc">By downloading or using Glasses Scanner, you agree to be bound by these terms. If you do not agree, do not use the application.</string>
     <string name="tos_section_2_title">2. License &amp; Use</string>

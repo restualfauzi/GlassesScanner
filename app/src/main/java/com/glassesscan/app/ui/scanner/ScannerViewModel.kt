@@ -520,6 +520,69 @@ class ScannerViewModel(
         _uiState.update { it.copy(isScanning = false) }
     }
 
+    // BLE GATT De-Anonymization
+    fun deepInspectDevice(address: String) {
+        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as android.bluetooth.BluetoothManager
+        val adapter = bluetoothManager.adapter
+        val device = adapter?.getRemoteDevice(address) ?: return
+
+        var gatt: android.bluetooth.BluetoothGatt? = null
+        val callback = object : android.bluetooth.BluetoothGattCallback() {
+            @android.annotation.SuppressLint("MissingPermission")
+            override fun onConnectionStateChange(gatt: android.bluetooth.BluetoothGatt, status: Int, newState: Int) {
+                if (newState == android.bluetooth.BluetoothProfile.STATE_CONNECTED) {
+                    gatt.discoverServices()
+                } else if (newState == android.bluetooth.BluetoothProfile.STATE_DISCONNECTED) {
+                    gatt.close()
+                }
+            }
+
+            @android.annotation.SuppressLint("MissingPermission")
+            override fun onServicesDiscovered(gatt: android.bluetooth.BluetoothGatt, status: Int) {
+                if (status == android.bluetooth.BluetoothGatt.GATT_SUCCESS) {
+                    // UUID for Device Information Service
+                    val service = gatt.getService(java.util.UUID.fromString("0000180A-0000-1000-8000-00805F9B34FB"))
+                    // UUID for Manufacturer Name String Characteristic
+                    val characteristic = service?.getCharacteristic(java.util.UUID.fromString("00002A29-0000-1000-8000-00805F9B34FB"))
+                    if (characteristic != null) {
+                        gatt.readCharacteristic(characteristic)
+                    } else {
+                        gatt.close()
+                    }
+                } else {
+                    gatt.close()
+                }
+            }
+
+            @android.annotation.SuppressLint("MissingPermission")
+            override fun onCharacteristicRead(
+                gatt: android.bluetooth.BluetoothGatt,
+                characteristic: android.bluetooth.BluetoothGattCharacteristic,
+                status: Int
+            ) {
+                if (status == android.bluetooth.BluetoothGatt.GATT_SUCCESS) {
+                    val manufacturerName = characteristic.getStringValue(0)
+                    if (manufacturerName != null && manufacturerName.isNotBlank()) {
+                        viewModelScope.launch(Dispatchers.Main) {
+                            val msg = "Deep Inspect Result:\nManufacturer: $manufacturerName"
+                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
+                            
+                            // Update tag with true manufacturer
+                            updateDeviceTag(address, "MFG: $manufacturerName")
+                        }
+                    }
+                }
+                gatt.close()
+            }
+        }
+        
+        android.widget.Toast.makeText(context, "Deep Inspecting $address...", android.widget.Toast.LENGTH_SHORT).show()
+        try {
+            @Suppress("MissingPermission")
+            gatt = device.connectGatt(context, false, callback)
+        } catch (_: Exception) {}
+    }
+
     override fun onCleared() {
         super.onCleared()
     }

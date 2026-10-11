@@ -136,7 +136,7 @@ fun HistoryScreen(viewModel: HistoryViewModel, isPremium: Boolean) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             FilledTonalButton(
                                 onClick = { 
-                                    if (isPremium) viewModel.exportHistoryToCsv(context)
+                                    if (isPremium) viewModel.exportHistoryToPdf(context)
                                     else {
                                         Toast.makeText(context, premiumRequiredMsg, Toast.LENGTH_SHORT).show()
                                     }

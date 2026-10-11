@@ -386,6 +386,28 @@ fun ScannerScreen(viewModel: ScannerViewModel, isPremium: Boolean) {
                             Text(if (isIgnored) stringResource(R.string.unignore) else stringResource(R.string.ignore), color = if (isIgnored) Color.Gray else Color(0xFFFF3B30))
                         }
                     }
+                    
+                    // BLE GATT De-Anonymization (Premium Deep Inspect)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            if (isPremium) {
+                                viewModel.deepInspectDevice(device.address)
+                            } else {
+                                Toast.makeText(context, "Premium feature: GATT Deep Inspect unlocks hidden manufacturer data.", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = if (isPremium) Color(0xFF5856D6) else Color.Gray)
+                    ) {
+                        Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Deep Inspect (GATT)", fontWeight = FontWeight.Bold)
+                        if (!isPremium) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(14.dp))
+                        }
+                    }
                 }
             },
             confirmButton = {
