@@ -1,31 +1,31 @@
 package com.glassesscan.app.ui.scanner.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.material.icons.filled.Bluetooth
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Devices
-import androidx.compose.material.icons.filled.Face
-import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.glassesscan.app.R
 import com.glassesscan.app.domain.model.DetectedDevice
 
 @Composable
 fun DeviceItem(device: DetectedDevice, onClick: () -> Unit = {}) {
+    val imageRes = device.getDrawableRes()
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -38,18 +38,26 @@ fun DeviceItem(device: DetectedDevice, onClick: () -> Unit = {}) {
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Devices Icon (Bluetooth or Wearable)
+            // Devices Icon / Image Thumbnail
             Box(
-                modifier = Modifier
-                    .size(48.dp),
+                modifier = Modifier.size(48.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = if (device.isMetaGlasses) Icons.Default.Face else Icons.Default.Bluetooth,
-                    contentDescription = null,
-                    tint = if (device.isMetaGlasses) MaterialTheme.colorScheme.onSurface else Color.Gray,
-                    modifier = Modifier.size(32.dp)
-                )
+                if (imageRes != null) {
+                    Image(
+                        painter = painterResource(id = imageRes),
+                        contentDescription = device.name,
+                        modifier = Modifier.size(44.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                } else {
+                    Icon(
+                        imageVector = if (device.isMetaGlasses) Icons.Default.Face else Icons.Default.Bluetooth,
+                        contentDescription = null,
+                        tint = if (device.isMetaGlasses) MaterialTheme.colorScheme.onSurface else Color.Gray,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.width(12.dp))
@@ -62,7 +70,7 @@ fun DeviceItem(device: DetectedDevice, onClick: () -> Unit = {}) {
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = device.address,
+                    text = device.getCategoryLabel(),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )

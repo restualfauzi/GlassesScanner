@@ -1,5 +1,6 @@
 package com.glassesscan.app.ui.settings
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,58 +12,145 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.glassesscan.app.R
-import androidx.compose.ui.res.stringResource
+import com.glassesscan.app.util.AdMobHelper
 
 data class SmartDevice(
     val name: String,
     val brand: String,
     val description: String,
-    val specs: String
+    val specs: String,
+    val imageRes: Int? = null
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DeviceLibraryScreen(onBack: () -> Unit) {
+fun DeviceLibraryScreen(onBack: () -> Unit, isPremium: Boolean = false) {
     val devices = listOf(
         SmartDevice(
-            "Ray-Ban Meta (Gen 2)",
-            "Meta / Ray-Ban",
-            "The latest smart glasses with ultra-wide 12MP camera, open-ear audio, and AI integration.",
-            "BT 5.3, Wi-Fi 6, 12MP Camera"
+            stringResource(R.string.device_1_name),
+            stringResource(R.string.device_1_brand),
+            stringResource(R.string.device_1_desc),
+            stringResource(R.string.device_1_specs),
+            R.drawable.ray_ban_meta
         ),
         SmartDevice(
-            "Ray-Ban Stories",
-            "Meta / Ray-Ban",
-            "First generation smart glasses for capturing photos and videos directly to social media.",
-            "BT 5.0, 5MP Dual Camera"
+            stringResource(R.string.device_2_name),
+            stringResource(R.string.device_2_brand),
+            stringResource(R.string.device_2_desc),
+            stringResource(R.string.device_2_specs),
+            R.drawable.ray_ban_stories
         ),
         SmartDevice(
-            "XREAL Air 2 Ultra",
-            "XREAL (Nreal)",
-            "High-end AR glasses with spatial computing and 6DoF tracking.",
-            "USB-C, Dual 3D Cameras, AR Display"
+            stringResource(R.string.device_3_name),
+            stringResource(R.string.device_3_brand),
+            stringResource(R.string.device_3_desc),
+            stringResource(R.string.device_3_specs),
+            R.drawable.xreal_air
         ),
         SmartDevice(
-            "Viture One",
-            "VITURE",
-            "XR glasses designed for cloud gaming and premium entertainment experience.",
-            "120Hz OLED, Electrochromic film"
+            stringResource(R.string.device_4_name),
+            stringResource(R.string.device_4_brand),
+            stringResource(R.string.device_4_desc),
+            stringResource(R.string.device_4_specs),
+            R.drawable.viture_one
         ),
         SmartDevice(
-            "Amazon Echo Frames",
-            "Amazon",
-            "Smart audio eyewear with hands-free Alexa and discreet notifications.",
-            "BT 5.2, 4 Micro-speakers"
+            stringResource(R.string.device_5_name),
+            stringResource(R.string.device_5_brand),
+            stringResource(R.string.device_5_desc),
+            stringResource(R.string.device_5_specs),
+            R.drawable.echo_frames
         ),
         SmartDevice(
-            "Snap Spectacles 4",
-            "Snapchat",
-            "True AR glasses with dual 3D waveguides and built-in spatial audio.",
-            "BT 5.0, 2 Cameras, Waveguide display"
+            stringResource(R.string.device_6_name),
+            stringResource(R.string.device_6_brand),
+            stringResource(R.string.device_6_desc),
+            stringResource(R.string.device_6_specs),
+            R.drawable.snap_spectacles
+        ),
+        SmartDevice(
+            stringResource(R.string.device_7_name),
+            stringResource(R.string.device_7_brand),
+            stringResource(R.string.device_7_desc),
+            stringResource(R.string.device_7_specs),
+            R.drawable.even_realities_g1
+        ),
+        SmartDevice(
+            stringResource(R.string.device_8_name),
+            stringResource(R.string.device_8_brand),
+            stringResource(R.string.device_8_desc),
+            stringResource(R.string.device_8_specs),
+            R.drawable.ar_rokid_max
+        ),
+        SmartDevice(
+            stringResource(R.string.device_9_name),
+            stringResource(R.string.device_9_brand),
+            stringResource(R.string.device_9_desc),
+            stringResource(R.string.device_9_specs),
+            R.drawable.huawei_eyewear
+        ),
+        SmartDevice(
+            stringResource(R.string.device_10_name),
+            stringResource(R.string.device_10_brand),
+            stringResource(R.string.device_10_desc),
+            stringResource(R.string.device_10_specs),
+            R.drawable.lucyd_lite
+        ),
+        SmartDevice(
+            stringResource(R.string.device_11_name),
+            stringResource(R.string.device_11_brand),
+            stringResource(R.string.device_11_desc),
+            stringResource(R.string.device_11_specs),
+            R.drawable.razer_anzu
+        ),
+        SmartDevice(
+            stringResource(R.string.device_12_name),
+            stringResource(R.string.device_12_brand),
+            stringResource(R.string.device_12_desc),
+            stringResource(R.string.device_12_specs),
+            R.drawable.frame_ai_glasses
+        ),
+        SmartDevice(
+            stringResource(R.string.device_13_name),
+            stringResource(R.string.device_13_brand),
+            stringResource(R.string.device_13_desc),
+            stringResource(R.string.device_13_specs),
+            R.drawable.inmo_air
+        ),
+        SmartDevice(
+            stringResource(R.string.device_14_name),
+            stringResource(R.string.device_14_brand),
+            stringResource(R.string.device_14_desc),
+            stringResource(R.string.device_14_specs),
+            R.drawable.spy_hd_camera_glasses
+        ),
+        SmartDevice(
+            stringResource(R.string.device_15_name),
+            stringResource(R.string.device_15_brand),
+            stringResource(R.string.device_15_desc),
+            stringResource(R.string.device_15_specs),
+            R.drawable.xreal_air
+        ),
+        SmartDevice(
+            stringResource(R.string.device_16_name),
+            stringResource(R.string.device_16_brand),
+            stringResource(R.string.device_16_desc),
+            stringResource(R.string.device_16_specs),
+            R.drawable.echo_frames
+        ),
+        SmartDevice(
+            stringResource(R.string.device_17_name),
+            stringResource(R.string.device_17_brand),
+            stringResource(R.string.device_17_desc),
+            stringResource(R.string.device_17_specs),
+            R.drawable.huawei_eyewear
         )
     )
 
@@ -77,6 +165,9 @@ fun DeviceLibraryScreen(onBack: () -> Unit) {
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
+        },
+        bottomBar = {
+            AdMobHelper.BannerAdView(isPremium = isPremium)
         }
     ) { padding ->
         LazyColumn(
@@ -88,7 +179,7 @@ fun DeviceLibraryScreen(onBack: () -> Unit) {
         ) {
             item {
                 Text(
-                    text = "Learn about the most common smart glasses detected by our scanner.",
+                    text = stringResource(R.string.device_library_intro),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray,
                     modifier = Modifier.padding(vertical = 16.dp)
@@ -111,6 +202,18 @@ fun DeviceInfoCard(device: SmartDevice) {
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            device.imageRes?.let { imgRes ->
+                Image(
+                    painter = painterResource(id = imgRes),
+                    contentDescription = device.name,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp),
+                    contentScale = ContentScale.Fit
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
             Text(
                 text = device.brand.uppercase(),
                 style = MaterialTheme.typography.labelSmall,

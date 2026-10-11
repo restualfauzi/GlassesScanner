@@ -1,24 +1,33 @@
 package com.glassesscan.app.ui.history
 
+import android.content.Context
+import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -26,25 +35,51 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.glassesscan.app.R
 import com.glassesscan.app.domain.model.DetectedDevice
-import androidx.compose.material.icons.filled.FileDownload
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.ui.platform.LocalContext
 import com.glassesscan.app.ui.scanner.components.SignalIndicator
+import com.glassesscan.app.util.AdMobHelper
 import java.text.SimpleDateFormat
 import java.util.*
+
+enum class HistoryFilter {
+    ALL,
+    SMART_GLASSES,
+    SUSPICIOUS
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(viewModel: HistoryViewModel, isPremium: Boolean) {
     val history by viewModel.history.collectAsState()
     val context = LocalContext.current
+    val premiumRequiredMsg = stringResource(R.string.premium_required_export)
     
+    var selectedFilter by remember { mutableStateOf(HistoryFilter.ALL) }
     var showTagDialog by remember { mutableStateOf<String?>(null) }
     var tagText by remember { mutableStateOf("") }
     var showClearConfirm by remember { mutableStateOf(false) }
 
-    val groupedHistory = remember(history) {
-        history.groupBy { 
+    val smartGlassesCount = remember(history) {
+        history.count { it.isMetaGlasses || it.getDrawableRes() != null || it.getCategoryLabel() != "BLE Device" }
+    }
+
+    val suspiciousCount = remember(history) {
+        history.count { it.isZoneAlert || it.isMetaGlasses || it.proximity == DetectedDevice.Proximity.IMMEDIATE || it.rssi > -70 }
+    }
+
+    val filteredHistory = remember(history, selectedFilter) {
+        when (selectedFilter) {
+            HistoryFilter.ALL -> history
+            HistoryFilter.SMART_GLASSES -> history.filter { 
+                it.isMetaGlasses || it.getDrawableRes() != null || it.getCategoryLabel() != "BLE Device" 
+            }
+            HistoryFilter.SUSPICIOUS -> history.filter { 
+                it.isZoneAlert || it.isMetaGlasses || it.proximity == DetectedDevice.Proximity.IMMEDIATE || it.rssi > -70 
+            }
+        }
+    }
+
+    val groupedHistory = remember(filteredHistory) {
+        filteredHistory.groupBy { 
             val date = Date(it.timestamp)
             val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             sdf.format(date)
@@ -56,18 +91,21 @@ fun HistoryScreen(viewModel: HistoryViewModel, isPremium: Boolean) {
             CenterAlignedTopAppBar(
                 title = { 
                     Text(
-                        "History",
+                        stringResource(R.string.nav_history),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
                     ) 
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
                     titleContentColor = MaterialTheme.colorScheme.onBackground,
                     actionIconContentColor = MaterialTheme.colorScheme.onBackground
                 )
             )
+        },
+        bottomBar = {
+            AdMobHelper.BannerAdView(isPremium = isPremium)
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
@@ -78,17 +116,17 @@ fun HistoryScreen(viewModel: HistoryViewModel, isPremium: Boolean) {
                 .padding(horizontal = 16.dp),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
-            // Top Header with Clear All
+            // Top Header with Clear All & Export
             item {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 16.dp, bottom = 12.dp),
+                        .padding(top = 12.dp, bottom = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "LAST META DETECTIONS",
+                        text = stringResource(R.string.last_meta_detection),
                         style = MaterialTheme.typography.labelMedium,
                         color = Color.Gray,
                         letterSpacing = 0.5.sp
@@ -96,37 +134,44 @@ fun HistoryScreen(viewModel: HistoryViewModel, isPremium: Boolean) {
                     
                     if (history.isNotEmpty()) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            TextButton(
+                            FilledTonalButton(
                                 onClick = { 
                                     if (isPremium) viewModel.exportHistoryToCsv(context)
                                     else {
-                                        // Show premium required toast or similar
-                                        android.widget.Toast.makeText(context, "Premium Required for Export", android.widget.Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, premiumRequiredMsg, Toast.LENGTH_SHORT).show()
                                     }
                                 },
-                                contentPadding = PaddingValues(0.dp)
+                                shape = CircleShape,
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                modifier = Modifier.height(32.dp)
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(
                                         imageVector = if (isPremium) Icons.Default.FileDownload else Icons.Default.Lock, 
                                         contentDescription = null, 
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(14.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Export", style = MaterialTheme.typography.labelLarge)
+                                    Text(stringResource(R.string.export), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                                 }
                             }
                             
                             Spacer(modifier = Modifier.width(8.dp))
 
-                            TextButton(
+                            FilledTonalButton(
                                 onClick = { showClearConfirm = true },
-                                contentPadding = PaddingValues(0.dp)
+                                shape = CircleShape,
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
+                                    contentColor = MaterialTheme.colorScheme.error
+                                ),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                modifier = Modifier.height(32.dp)
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(14.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Clear All", style = MaterialTheme.typography.labelLarge)
+                                    Text(stringResource(R.string.clear_all), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -134,20 +179,113 @@ fun HistoryScreen(viewModel: HistoryViewModel, isPremium: Boolean) {
                 }
             }
 
-            if (history.isEmpty()) {
+            // iOS Style Segmented Control Filter Row with Dynamic Counts
+            item {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    shape = RoundedCornerShape(9.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(2.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        val filters = listOf(
+                            HistoryFilter.ALL to "${stringResource(R.string.filter_all)} (${history.size})",
+                            HistoryFilter.SMART_GLASSES to "${stringResource(R.string.filter_smart_glasses)} ($smartGlassesCount)",
+                            HistoryFilter.SUSPICIOUS to "${stringResource(R.string.filter_suspicious)} ($suspiciousCount)"
+                        )
+
+                        filters.forEach { (filter, label) ->
+                            val isSelected = selectedFilter == filter
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(32.dp)
+                                    .clickable { selectedFilter = filter },
+                                shape = RoundedCornerShape(7.dp),
+                                color = if (isSelected) {
+                                    if (filter == HistoryFilter.SUSPICIOUS) Color(0xFFFF3B30) else MaterialTheme.colorScheme.surface
+                                } else Color.Transparent,
+                                shadowElevation = if (isSelected) 2.dp else 0.dp
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        if (filter == HistoryFilter.SUSPICIOUS) {
+                                            Icon(
+                                                Icons.Default.Warning,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(12.dp),
+                                                tint = if (isSelected) Color.White else Color(0xFFFF3B30)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                        } else if (filter == HistoryFilter.SMART_GLASSES) {
+                                            Icon(
+                                                Icons.Default.Face,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(12.dp),
+                                                tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                        }
+                                        Text(
+                                            text = label,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) {
+                                                if (filter == HistoryFilter.SUSPICIOUS) Color.White else MaterialTheme.colorScheme.onSurface
+                                            } else Color.Gray,
+                                            fontSize = 10.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                if (!isPremium) {
+                    AdMobHelper.NativeAdView(isPremium = false)
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+            }
+
+            if (filteredHistory.isEmpty()) {
                 item {
-                    Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(text = stringResource(R.string.no_history), color = Color.Gray)
+                    Box(
+                        modifier = Modifier
+                            .fillParentMaxSize()
+                            .padding(bottom = 64.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val emptyMsg = when (selectedFilter) {
+                            HistoryFilter.SMART_GLASSES -> "No smart glasses in history"
+                            HistoryFilter.SUSPICIOUS -> "No suspicious threats in history"
+                            else -> stringResource(R.string.no_history)
+                        }
+                        Text(text = emptyMsg, color = Color.Gray, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             } else {
                 groupedHistory.forEach { (dateKey, devices) ->
                     item {
                         Text(
-                            text = formatDateHeader(dateKey),
+                            text = formatDateHeader(dateKey, context),
                             style = MaterialTheme.typography.labelMedium,
                             color = Color.Gray,
-                            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+                            modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
                         )
                     }
                     
@@ -179,7 +317,7 @@ fun HistoryScreen(viewModel: HistoryViewModel, isPremium: Boolean) {
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "History is stored locally on your device.\nIt will be cleared if you uninstall the app.",
+                        text = stringResource(R.string.history_local_info),
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray,
                         textAlign = TextAlign.Center,
@@ -194,8 +332,8 @@ fun HistoryScreen(viewModel: HistoryViewModel, isPremium: Boolean) {
         AlertDialog(
             onDismissRequest = { showClearConfirm = false },
             icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFFF3B30)) },
-            title = { Text("Clear History?") },
-            text = { Text("Are you sure you want to delete all detection records? This action cannot be undone.") },
+            title = { Text(stringResource(R.string.clear_history_title)) },
+            text = { Text(stringResource(R.string.clear_history_msg)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -204,12 +342,12 @@ fun HistoryScreen(viewModel: HistoryViewModel, isPremium: Boolean) {
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFFF3B30))
                 ) {
-                    Text("Clear All", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.clear_all), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showClearConfirm = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -223,7 +361,7 @@ fun HistoryScreen(viewModel: HistoryViewModel, isPremium: Boolean) {
                 OutlinedTextField(
                     value = tagText,
                     onValueChange = { tagText = it },
-                    label = { Text("Custom Name/Tag") },
+                    label = { Text(stringResource(R.string.custom_tag_label)) },
                     singleLine = true
                 )
             },
@@ -246,6 +384,8 @@ fun HistoryScreen(viewModel: HistoryViewModel, isPremium: Boolean) {
 
 @Composable
 fun HistoryItem(device: DetectedDevice, onClick: () -> Unit) {
+    val imageRes = device.getDrawableRes()
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -262,12 +402,21 @@ fun HistoryItem(device: DetectedDevice, onClick: () -> Unit) {
                 modifier = Modifier.size(48.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = if (device.isMetaGlasses) Icons.Default.Face else Icons.Default.Bluetooth,
-                    contentDescription = null,
-                    tint = if (device.isMetaGlasses) MaterialTheme.colorScheme.onSurface else Color.Gray,
-                    modifier = Modifier.size(32.dp)
-                )
+                if (imageRes != null) {
+                    Image(
+                        painter = painterResource(id = imageRes),
+                        contentDescription = device.name,
+                        modifier = Modifier.size(44.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                } else {
+                    Icon(
+                        imageVector = if (device.isMetaGlasses) Icons.Default.Face else Icons.Default.Bluetooth,
+                        contentDescription = null,
+                        tint = if (device.isMetaGlasses) MaterialTheme.colorScheme.onSurface else Color.Gray,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.width(12.dp))
@@ -280,7 +429,7 @@ fun HistoryItem(device: DetectedDevice, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = device.address,
+                    text = device.getCategoryLabel(),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
@@ -310,7 +459,7 @@ fun HistoryItem(device: DetectedDevice, onClick: () -> Unit) {
     }
 }
 
-private fun formatDateHeader(dateKey: String): String {
+private fun formatDateHeader(dateKey: String, context: Context): String {
     val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     val date = sdf.parse(dateKey) ?: return dateKey
     val now = Calendar.getInstance()
@@ -318,10 +467,10 @@ private fun formatDateHeader(dateKey: String): String {
     
     return when {
         now.get(Calendar.YEAR) == headerDate.get(Calendar.YEAR) &&
-        now.get(Calendar.DAY_OF_YEAR) == headerDate.get(Calendar.DAY_OF_YEAR) -> "Today, " + SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()).format(date)
+        now.get(Calendar.DAY_OF_YEAR) == headerDate.get(Calendar.DAY_OF_YEAR) -> context.getString(R.string.today) + ", " + SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()).format(date)
         
         now.get(Calendar.YEAR) == headerDate.get(Calendar.YEAR) &&
-        now.get(Calendar.DAY_OF_YEAR) - 1 == headerDate.get(Calendar.DAY_OF_YEAR) -> "Yesterday, " + SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()).format(date)
+        now.get(Calendar.DAY_OF_YEAR) - 1 == headerDate.get(Calendar.DAY_OF_YEAR) -> context.getString(R.string.yesterday) + ", " + SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()).format(date)
         
         else -> SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()).format(date)
     }

@@ -6,16 +6,19 @@ import androidx.compose.runtime.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.GpsFixed
+import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material3.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import android.bluetooth.BluetoothAdapter
@@ -43,7 +46,6 @@ fun PermissionsHandler(
         mutableStateOf(bluetoothAdapter?.isEnabled == true) 
     }
 
-    // Monitor bluetooth state changes (e.g. if user turns it on from notification shade)
     DisposableEffect(Unit) {
         val receiver = object : android.content.BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
@@ -71,20 +73,16 @@ fun PermissionsHandler(
 
     val permissions = mutableListOf<String>()
     
-    // Core BLE & Location
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         permissions.add(Manifest.permission.BLUETOOTH_SCAN)
         permissions.add(Manifest.permission.BLUETOOTH_CONNECT)
-        // Add Fine Location anyway as some devices require it for device names
         permissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
     } else {
         permissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
     }
 
-    // Camera for AI Visual Scan
     permissions.add(Manifest.permission.CAMERA)
 
-    // Notifications & Wi-Fi for background monitoring (Android 13+)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         permissions.add(Manifest.permission.POST_NOTIFICATIONS)
         permissions.add(Manifest.permission.NEARBY_WIFI_DEVICES)
@@ -92,7 +90,6 @@ fun PermissionsHandler(
 
     val permissionState = rememberMultiplePermissionsState(permissions = permissions)
 
-    // Mandatory permissions check for entering the dashboard
     val mandatoryPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         listOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
     } else {
@@ -107,143 +104,166 @@ fun PermissionsHandler(
         if (isBluetoothEnabled) {
             onPermissionsGranted()
         } else {
-            // Screen to enable Bluetooth
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFF007AFF))
-                    .padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Surface(
-                    modifier = Modifier.size(100.dp),
-                    shape = CircleShape,
-                    color = Color.White.copy(alpha = 0.2f)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.Bluetooth,
-                            contentDescription = null,
-                            modifier = Modifier.size(50.dp),
-                            tint = Color.White
-                        )
-                    }
+            PermissionScreenLayout(
+                icon = Icons.Default.Bluetooth,
+                title = "Bluetooth Required",
+                desc = "To scan for nearby smart glasses, your Bluetooth must be turned ON.",
+                buttonText = "Enable Bluetooth",
+                onClick = { 
+                    val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+                    enableBtLauncher.launch(enableBtIntent)
                 }
-                Spacer(modifier = Modifier.height(48.dp))
-                Text(
-                    text = "Bluetooth Required",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color.White
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "To scan for nearby smart glasses, your Bluetooth must be turned ON.",
-                    color = Color.White.copy(alpha = 0.9f),
-                    textAlign = TextAlign.Center,
-                    lineHeight = 22.sp,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                
-                Spacer(modifier = Modifier.weight(1f))
-                
-                Button(
-                    onClick = { 
-                        val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-                        enableBtLauncher.launch(enableBtIntent)
-                    },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = MaterialTheme.shapes.medium,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+            )
+        }
+    } else {
+        PermissionScreenLayout(
+            icon = Icons.Default.Security,
+            title = "Privacy Shield",
+            desc = "To detect smart glasses and hidden recording devices, we need access to your Bluetooth and Location.",
+            buttonText = stringResource(R.string.grant_access),
+            onClick = { permissionState.launchMultiplePermissionRequest() },
+            content = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
-                    Text(
-                        text = "Enable Bluetooth", 
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color(0xFF007AFF)
+                    PermissionRequirementRow(
+                        icon = Icons.Default.Devices,
+                        title = "Bluetooth & Nearby",
+                        desc = "Scan for nearby smart device signals."
+                    )
+                    PermissionRequirementRow(
+                        icon = Icons.Default.GpsFixed,
+                        title = "Location",
+                        desc = "Tag detection markers on your tactical map."
                     )
                 }
             }
-        }
-    } else {
+        )
+    }
+}
+
+@Composable
+fun PermissionScreenLayout(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    desc: String,
+    buttonText: String,
+    onClick: () -> Unit,
+    content: @Composable (() -> Unit)? = null
+) {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFF007AFF)) // Professional Blue Background
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .systemBarsPadding()
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Surface(
-                modifier = Modifier.size(100.dp),
-                shape = CircleShape,
-                color = Color.White.copy(alpha = 0.2f)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.Security,
-                        contentDescription = null,
-                        modifier = Modifier.size(50.dp),
-                        tint = Color.White
+            Spacer(modifier = Modifier.weight(0.2f))
+
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(100.dp)
+                    .background(
+                        brush = Brush.linearGradient(
+                            colors = listOf(Color(0xFF007AFF), Color(0xFF5856D6))
+                        ),
+                        shape = CircleShape
                     )
-                }
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(50.dp),
+                    tint = Color.White
+                )
             }
-            Spacer(modifier = Modifier.height(48.dp))
+            
+            Spacer(modifier = Modifier.height(40.dp))
+            
             Text(
-                text = "Privacy Shield",
-                style = MaterialTheme.typography.headlineMedium,
+                text = title,
+                style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.ExtraBold,
-                color = Color.White
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "To detect smart glasses and hidden recording devices, we need access to your Bluetooth and Location.",
-                color = Color.White.copy(alpha = 0.9f),
                 textAlign = TextAlign.Center,
-                lineHeight = 22.sp,
-                style = MaterialTheme.typography.bodyLarge
+                color = MaterialTheme.colorScheme.onBackground
             )
             
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
-            PermissionFeatureItemWhite("Bluetooth & Nearby", "Scan for nearby smart device signals.")
-            PermissionFeatureItemWhite("Location", "Tag detection markers on your tactical map.")
+            Text(
+                text = desc,
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+            
+            if (content != null) {
+                Spacer(modifier = Modifier.height(56.dp))
+                content()
+            }
             
             Spacer(modifier = Modifier.weight(1f))
             
             Button(
-                onClick = { permissionState.launchMultiplePermissionRequest() },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = MaterialTheme.shapes.medium,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                onClick = onClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.onBackground,
+                    contentColor = MaterialTheme.colorScheme.background
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.grant_access), 
-                    fontWeight = FontWeight.Bold,
+                    text = buttonText,
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color(0xFF007AFF)
+                    fontWeight = FontWeight.Bold
                 )
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
 
 @Composable
-fun PermissionFeatureItemWhite(title: String, desc: String) {
+fun PermissionRequirementRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    desc: String
+) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(8.dp)
-                .background(Color.White, CircleShape)
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color(0xFF007AFF),
+            modifier = Modifier.size(28.dp)
         )
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(20.dp))
         Column {
-            Text(text = title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium, color = Color.White)
-            Text(text = desc, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f))
+            Text(
+                text = title, 
+                fontWeight = FontWeight.Bold, 
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = desc, 
+                style = MaterialTheme.typography.bodyMedium, 
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            )
         }
     }
 }

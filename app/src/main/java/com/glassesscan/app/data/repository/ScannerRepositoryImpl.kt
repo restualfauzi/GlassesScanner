@@ -1,29 +1,31 @@
 package com.glassesscan.app.data.repository
 
 import com.glassesscan.app.data.scanner.BleScannerHelper
+import com.glassesscan.app.data.scanner.WifiScannerHelper
 import com.glassesscan.app.domain.model.DetectedDevice
 import com.glassesscan.app.domain.repository.ScannerRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.scan
 
 class ScannerRepositoryImpl(
-    private val bleScannerHelper: BleScannerHelper
+    private val bleScannerHelper: BleScannerHelper,
+    private val wifiScannerHelper: WifiScannerHelper
 ) : ScannerRepository {
 
-    // Store devices in a map to update RSSI/Timestamp and avoid duplicates
-    private val deviceCache = mutableMapOf<String, DetectedDevice>()
-
     override fun scanDevices(): Flow<List<DetectedDevice>> {
-        return bleScannerHelper.startScanning()
+        val bleFlow = bleScannerHelper.startScanning()
+        val wifiFlow = wifiScannerHelper.startScanning()
+
+        return merge(bleFlow, wifiFlow)
             .scan(emptyMap<String, DetectedDevice>()) { acc, device ->
-                // Update or add device
                 val updatedMap = acc.toMutableMap()
                 updatedMap[device.address] = device
                 
-                // Cleanup old devices (e.g., not seen for more than 10 seconds)
+                // Cleanup old devices not seen for 12 seconds
                 val now = System.currentTimeMillis()
-                updatedMap.filterValues { now - it.timestamp < 10000 }
+                updatedMap.filterValues { now - it.timestamp < 12000 }
             }
             .map { it.values.toList().sortedByDescending { device -> device.rssi } }
     }

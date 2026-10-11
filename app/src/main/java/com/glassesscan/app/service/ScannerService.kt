@@ -1,8 +1,8 @@
 package com.glassesscan.app.service
 
 import android.app.*
-import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.collect
 
 import android.os.Vibrator
 import android.os.VibrationEffect
+import com.glassesscan.app.data.scanner.WifiScannerHelper
 import com.glassesscan.app.data.settings.SettingsManager
 import com.glassesscan.app.util.LocationHelper
 import kotlinx.coroutines.flow.first
@@ -25,6 +26,7 @@ class ScannerService : Service() {
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private lateinit var bleScannerHelper: BleScannerHelper
+    private lateinit var wifiScannerHelper: WifiScannerHelper
     private lateinit var repository: ScannerRepositoryImpl
     private lateinit var historyManager: HistoryManager
     private lateinit var settingsManager: SettingsManager
@@ -34,23 +36,33 @@ class ScannerService : Service() {
     override fun onCreate() {
         super.onCreate()
         bleScannerHelper = BleScannerHelper(this)
-        repository = ScannerRepositoryImpl(bleScannerHelper)
+        wifiScannerHelper = WifiScannerHelper(this)
+        repository = ScannerRepositoryImpl(bleScannerHelper, wifiScannerHelper)
         historyManager = HistoryManager(this)
         settingsManager = SettingsManager(this)
         locationHelper = LocationHelper(this)
-        vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
+        vibrator = getSystemService(Vibrator::class.java)
         createNotificationChannel()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == "STOP_SERVICE") {
-            stopForeground(true)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+            } else {
+                @Suppress("DEPRECATION")
+                stopForeground(true)
+            }
             stopSelf()
             return START_NOT_STICKY
         }
 
         val notification = createNotification("Monitoring for Smart Glasses...")
-        startForeground(1, notification)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+        } else {
+            startForeground(1, notification)
+        }
 
         startBackgroundScanning()
 
@@ -67,6 +79,7 @@ class ScannerService : Service() {
                 .collect { devices ->
                     val now = System.currentTimeMillis()
                     val shouldVibrate = settingsManager.vibrateOnDetect.first()
+                    val shouldAutoSave = settingsManager.autoSaveHistory.first()
                     val isZoneMode = settingsManager.zoneSecurityMode.first()
                     val ignoredDevices = settingsManager.ignoredDevices.first()
 
@@ -86,17 +99,30 @@ class ScannerService : Service() {
                                         longitude = location?.longitude,
                                         isZoneAlert = isZoneMode && device.isMetaGlasses
                                     )
-                                    historyManager.saveDetection(deviceWithLoc)
+                                    if (shouldAutoSave) {
+                                        historyManager.saveDetection(deviceWithLoc)
+                                    }
 
                                     if (shouldVibrate) {
                                         triggerVibration()
                                     }
                                     
-                                    val title = if (isZoneMode && !device.isMetaGlasses) "Device Detected in Zone" 
-                                               else if (isZoneMode) "CRITICAL: Zone Security Breach" 
-                                               else "Meta Glasses Detected!"
+                                    val deviceName = device.customTag ?: device.name ?: "Camera / Smart Glasses"
+                                    val title = when {
+                                        device.isHighBandwidth -> "RED ALERT: Active Video Streaming Detected"
+                                        isZoneMode && !device.isMetaGlasses -> "Device Detected in Zone"
+                                        isZoneMode -> "CRITICAL: Zone Security Breach"
+                                        else -> "ALERT: $deviceName Detected!"
+                                    }
                                     
-                                    showDetectionNotification(title, "A device has been identified nearby.")
+                                    val message = if (device.isHighBandwidth) {
+                                        "$deviceName is actively using high-bandwidth Wi-Fi. It might be streaming video right now!"
+                                    } else {
+                                        "$deviceName was identified nearby. Signal strength: ${device.rssi} dBm."
+                                    }
+                                    
+                                    showDetectionNotification(title, message)
+                                    sendWearOSAlert(title, message)
                                 } catch (e: Exception) {}
                             }
                         }
@@ -122,13 +148,46 @@ class ScannerService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
+            val manager = getSystemService(NotificationManager::class.java)
+
+            // Silent Foreground Service Channel
+            val serviceChannel = NotificationChannel(
                 "scanner_channel",
-                "Scanner Service",
+                "Scanner Foreground Service",
                 NotificationManager.IMPORTANCE_LOW
             )
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
+            manager.createNotificationChannel(serviceChannel)
+
+            // High Priority Pop-Up / Heads-Up Banner Channel
+            val alertChannel = NotificationChannel(
+                "threat_alert_channel",
+                "Camera Glasses Threat Alerts",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Pop-up banner alerts at the top of screen when smart glasses are detected"
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 500, 200, 500)
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            }
+            manager.createNotificationChannel(alertChannel)
+        }
+    }
+
+    private fun sendWearOSAlert(title: String, message: String) {
+        serviceScope.launch(Dispatchers.IO) {
+            try {
+                val messageClient = com.google.android.gms.wearable.Wearable.getMessageClient(this@ScannerService)
+                val nodeClient = com.google.android.gms.wearable.Wearable.getNodeClient(this@ScannerService)
+                
+                nodeClient.connectedNodes.addOnSuccessListener { nodes ->
+                    val payload = "$title|$message".toByteArray(Charsets.UTF_8)
+                    for (node in nodes) {
+                        messageClient.sendMessage(node.id, "/glasses_alert", payload)
+                    }
+                }
+            } catch (e: Exception) {
+                // Wear OS not connected or unavailable
+            }
         }
     }
 
@@ -150,16 +209,32 @@ class ScannerService : Service() {
     }
 
     private fun showDetectionNotification(title: String, message: String) {
-        val notification = NotificationCompat.Builder(this, "scanner_channel")
+        val openAppIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val openAppPendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            openAppIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val notification = NotificationCompat.Builder(this, "threat_alert_channel")
             .setContentTitle(title)
             .setContentText(message)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setDefaults(Notification.DEFAULT_ALL)
+            .setContentIntent(openAppPendingIntent)
+            .setAutoCancel(true)
+            .setFullScreenIntent(openAppPendingIntent, false) // Triggers Heads-Up Pop-Up Banner at top of screen
+            .addAction(0, "OPEN RADAR", openAppPendingIntent)
             .build()
 
         val manager = getSystemService(NotificationManager::class.java)
-        manager.notify(2, notification)
+        val notificationId = (System.currentTimeMillis() % 10000).toInt()
+        manager.notify(notificationId, notification)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

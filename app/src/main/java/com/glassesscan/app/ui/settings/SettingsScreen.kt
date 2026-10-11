@@ -2,12 +2,15 @@ package com.glassesscan.app.ui.settings
 
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,10 +23,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.glassesscan.app.R
+import com.glassesscan.app.util.AdMobHelper
+import com.glassesscan.app.util.findActivity
 import com.glassesscan.app.ui.navigation.Screen
-import com.glassesscan.app.util.BannerAdView
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,15 +36,15 @@ fun SettingsScreen(
 ) {
     val isDarkMode by viewModel.isDarkMode.collectAsState()
     val vibrateOnDetect by viewModel.vibrateOnDetect.collectAsState()
+    val soundAlertEnabled by viewModel.soundAlertEnabled.collectAsState()
+    val autoSaveHistory by viewModel.autoSaveHistory.collectAsState()
+    val ecoScanMode by viewModel.ecoScanMode.collectAsState()
     val zoneSecurityMode by viewModel.zoneSecurityMode.collectAsState()
     val isPremium by viewModel.isPremium.collectAsState()
     val premiumPrice by viewModel.premiumPrice.collectAsState()
-    val currentLang by viewModel.languageCode.collectAsState()
     val scanSensitivity by viewModel.scanSensitivity.collectAsState()
     val context = LocalContext.current
     val noEmailError = stringResource(R.string.error_no_email)
-
-    var showLangDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -53,13 +56,13 @@ fun SettingsScreen(
                         fontWeight = FontWeight.Bold
                     ) 
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 )
             )
         },
         bottomBar = {
-            BannerAdView(isPremium = isPremium)
+            AdMobHelper.BannerAdView(isPremium = isPremium)
         }
     ) { innerPadding ->
         LazyColumn(
@@ -140,19 +143,44 @@ fun SettingsScreen(
                                     )
                                 }
                             } else {
-                                val activity = context as? android.app.Activity
+                                val activity = context.findActivity()
                                 Button(
                                     onClick = { activity?.let { viewModel.buyPremium(it) } },
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF007AFF)),
-                                    shape = MaterialTheme.shapes.small,
-                                    modifier = Modifier.fillMaxWidth()
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color.White,
+                                        contentColor = Color(0xFF007AFF)
+                                    ),
+                                    shape = CircleShape,
+                                    elevation = ButtonDefaults.buttonElevation(
+                                        defaultElevation = 3.dp,
+                                        pressedElevation = 6.dp
+                                    ),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(50.dp)
                                 ) {
-                                    val buttonText = if (premiumPrice != null) {
-                                        "${stringResource(R.string.remove_ads)} ($premiumPrice)"
-                                    } else {
-                                        stringResource(R.string.remove_ads)
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        Icon(
+                                            Icons.Default.AutoAwesome,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(20.dp),
+                                            tint = Color(0xFF007AFF)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        val buttonText = if (premiumPrice != null) {
+                                            "${stringResource(R.string.remove_ads)} ($premiumPrice)"
+                                        } else {
+                                            stringResource(R.string.remove_ads)
+                                        }
+                                        Text(
+                                            text = buttonText,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.ExtraBold
+                                        )
                                     }
-                                    Text(text = buttonText.uppercase(), fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -162,9 +190,9 @@ fun SettingsScreen(
             }
 
             // Preferences
-            item { SectionHeader("PREFERENCES") }
+            item { SectionHeader(stringResource(R.string.preferences_header)) }
             item {
-                iOSSettingsItem(
+                IOSSettingsItem(
                     title = stringResource(R.string.dark_mode),
                     icon = Icons.Default.DarkMode,
                     iconColor = Color(0xFF5856D6),
@@ -174,7 +202,17 @@ fun SettingsScreen(
                 )
             }
             item {
-                iOSSettingsItem(
+                IOSSettingsItem(
+                    title = stringResource(R.string.sound_alert_setting),
+                    icon = Icons.AutoMirrored.Filled.VolumeUp,
+                    iconColor = Color(0xFF007AFF),
+                    trailing = {
+                        Switch(checked = soundAlertEnabled, onCheckedChange = { viewModel.setSoundAlertEnabled(it) })
+                    }
+                )
+            }
+            item {
+                IOSSettingsItem(
                     title = stringResource(R.string.vibrate_on_detect),
                     icon = Icons.Default.Vibration,
                     iconColor = Color(0xFF8E8E93),
@@ -183,9 +221,39 @@ fun SettingsScreen(
                     }
                 )
             }
+            item {
+                IOSSettingsItem(
+                    title = stringResource(R.string.auto_save_history_setting),
+                    icon = Icons.Default.HistoryToggleOff,
+                    iconColor = Color(0xFFFF9500),
+                    trailing = {
+                        Switch(checked = autoSaveHistory, onCheckedChange = { viewModel.setAutoSaveHistory(it) })
+                    }
+                )
+            }
+            item {
+                IOSSettingsItem(
+                    title = "Account & Cloud Sync",
+                    icon = Icons.Default.CloudSync,
+                    iconColor = Color(0xFF007AFF),
+                    subtitle = com.glassesscan.app.util.AuthManager.getUserEmail(),
+                    onClick = { onNavigate(Screen.Login) }
+                )
+            }
+            item {
+                IOSSettingsItem(
+                    title = "Eco Scan Mode (Battery Saver)",
+                    icon = Icons.Default.BatterySaver,
+                    iconColor = Color(0xFF34C759),
+                    subtitle = "Extends battery by adjusting scan frequency when battery < 20%",
+                    trailing = {
+                        Switch(checked = ecoScanMode, onCheckedChange = { viewModel.setEcoScanMode(it) })
+                    }
+                )
+            }
             // Zone Security Toggle (Premium Gated)
             item {
-                iOSSettingsItem(
+                IOSSettingsItem(
                     title = stringResource(R.string.zone_security),
                     icon = Icons.Default.Shield,
                     iconColor = Color(0xFF34C759),
@@ -199,7 +267,7 @@ fun SettingsScreen(
                 )
             }
             item {
-                iOSSettingsItem(
+                IOSSettingsItem(
                     title = stringResource(R.string.scan_sensitivity),
                     icon = Icons.Default.Tune,
                     iconColor = Color(0xFF34C759),
@@ -221,34 +289,25 @@ fun SettingsScreen(
                     }
                 )
             }
-            item {
-                iOSSettingsItem(
-                    title = stringResource(R.string.language),
-                    icon = Icons.Default.Language,
-                    iconColor = Color(0xFF007AFF),
-                    subtitle = getLanguageName(currentLang),
-                    onClick = { showLangDialog = true }
-                )
-            }
 
             // Support
             item { Spacer(modifier = Modifier.height(24.dp)) }
-            item { SectionHeader("SUPPORT") }
+            item { SectionHeader(stringResource(R.string.support_header)) }
             item {
-                iOSSettingsItem(
+                IOSSettingsItem(
                     title = stringResource(R.string.device_library),
                     icon = Icons.Default.AutoStories,
                     iconColor = Color(0xFF5856D6),
-                    subtitle = "Learn about smart eyewear",
+                    subtitle = stringResource(R.string.device_library_subtitle),
                     onClick = { onNavigate(Screen.DeviceLibrary) }
                 )
             }
             item {
-                iOSSettingsItem(
-                    title = "Rate App",
+                IOSSettingsItem(
+                    title = stringResource(R.string.rate_app_label),
                     icon = Icons.Default.Star,
                     iconColor = Color(0xFFFFCC00),
-                    subtitle = "Give us 5 stars on Play Store",
+                    subtitle = stringResource(R.string.rate_app_subtitle),
                     onClick = {
                         try {
                             val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -256,14 +315,14 @@ fun SettingsScreen(
                                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             }
                             context.startActivity(intent)
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             try {
                                 val webIntent = Intent(Intent.ACTION_VIEW).apply {
                                     data = Uri.parse("https://play.google.com/store/apps/details?id=com.glassesscan.app")
                                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                 }
                                 context.startActivity(webIntent)
-                            } catch (e2: Exception) {
+                            } catch (_: Exception) {
                                 android.widget.Toast.makeText(context, "Could not open Play Store", android.widget.Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -271,24 +330,32 @@ fun SettingsScreen(
                 )
             }
             item {
-                iOSSettingsItem(
-                    title = "Privacy Audit",
+                IOSSettingsItem(
+                    title = stringResource(R.string.privacy_audit_label),
                     icon = Icons.Default.AssignmentTurnedIn,
                     iconColor = Color(0xFF34C759),
-                    subtitle = "Complete your security check",
+                    subtitle = stringResource(R.string.privacy_audit_subtitle),
                     onClick = { onNavigate(Screen.Audit) }
                 )
             }
             item {
-                iOSSettingsItem(
+                IOSSettingsItem(
+                    title = stringResource(R.string.safety_tips_label),
+                    icon = Icons.Default.TipsAndUpdates,
+                    iconColor = Color(0xFFFFCC00),
+                    onClick = { onNavigate(Screen.SafetyTips) }
+                )
+            }
+            item {
+                IOSSettingsItem(
                     title = stringResource(R.string.guide_title),
-                    icon = Icons.Default.HelpOutline,
+                    icon = Icons.AutoMirrored.Filled.HelpOutline,
                     iconColor = Color(0xFF34C759),
                     onClick = { onNavigate(Screen.Guide) }
                 )
             }
             item {
-                iOSSettingsItem(
+                IOSSettingsItem(
                     title = stringResource(R.string.contact_support),
                     icon = Icons.Default.Email,
                     iconColor = Color(0xFFFF9500),
@@ -302,7 +369,7 @@ fun SettingsScreen(
                                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             }
                             context.startActivity(intent)
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             try {
                                 val fallbackIntent = Intent(Intent.ACTION_SENDTO).apply {
                                     data = Uri.parse("mailto:support@circlemesh.site")
@@ -310,7 +377,7 @@ fun SettingsScreen(
                                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                 }
                                 context.startActivity(fallbackIntent)
-                            } catch (e2: Exception) {
+                            } catch (_: Exception) {
                                 android.widget.Toast.makeText(context, noEmailError, android.widget.Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -318,7 +385,7 @@ fun SettingsScreen(
                 )
             }
             item {
-                iOSSettingsItem(
+                IOSSettingsItem(
                     title = stringResource(R.string.privacy_title),
                     icon = Icons.Default.PrivacyTip,
                     iconColor = Color(0xFF8E8E93),
@@ -326,8 +393,8 @@ fun SettingsScreen(
                 )
             }
             item {
-                iOSSettingsItem(
-                    title = "Terms of Service",
+                IOSSettingsItem(
+                    title = stringResource(R.string.terms_of_service_label),
                     icon = Icons.Default.Gavel,
                     iconColor = Color(0xFF8E8E93),
                     onClick = { onNavigate(Screen.TermsOfService) }
@@ -336,31 +403,15 @@ fun SettingsScreen(
 
             item {
                 Spacer(modifier = Modifier.height(48.dp))
-                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("VERSION 1.0.2", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                    Text("© 2026 Circle Mesh Limited", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(stringResource(R.string.version_info, com.glassesscan.app.BuildConfig.VERSION_NAME), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    Text(stringResource(R.string.privacy_copyright), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                 }
             }
         }
-    }
-
-    if (showLangDialog) {
-        AlertDialog(
-            onDismissRequest = { showLangDialog = false },
-            title = { Text(stringResource(R.string.language)) },
-            text = {
-                Column {
-                    LanguageOption("en", "English", currentLang) { viewModel.setLanguage("en"); showLangDialog = false }
-                    LanguageOption("id", "Indonesia", currentLang) { viewModel.setLanguage("id"); showLangDialog = false }
-                    LanguageOption("zh", "Chinese", currentLang) { viewModel.setLanguage("zh"); showLangDialog = false }
-                    LanguageOption("es", "Español", currentLang) { viewModel.setLanguage("es"); showLangDialog = false }
-                    LanguageOption("fr", "Français", currentLang) { viewModel.setLanguage("fr"); showLangDialog = false }
-                    LanguageOption("de", "Deutsch", currentLang) { viewModel.setLanguage("de"); showLangDialog = false }
-                    LanguageOption("ja", "日本語", currentLang) { viewModel.setLanguage("ja"); showLangDialog = false }
-                }
-            },
-            confirmButton = {}
-        )
     }
 }
 
@@ -392,7 +443,7 @@ fun SectionHeader(title: String) {
 }
 
 @Composable
-fun iOSSettingsItem(
+fun IOSSettingsItem(
     title: String,
     icon: ImageVector,
     iconColor: Color,
@@ -402,7 +453,7 @@ fun iOSSettingsItem(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth().then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
-        shape = MaterialTheme.shapes.small,
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -435,28 +486,4 @@ fun iOSSettingsItem(
     }
 }
 
-@Composable
-fun LanguageOption(code: String, name: String, current: String, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        RadioButton(selected = code == current, onClick = null)
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(text = name)
-    }
-}
 
-private fun getLanguageName(code: String) = when(code) {
-    "en" -> "English"
-    "id" -> "Indonesia"
-    "zh" -> "Chinese"
-    "es" -> "Español"
-    "fr" -> "Français"
-    "de" -> "Deutsch"
-    "ja" -> "日本語"
-    else -> "English"
-}

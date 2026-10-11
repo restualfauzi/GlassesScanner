@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "468858760485",
+    "firebase_url": "https://glasses-scanner-default-rtdb.asia-southeast1.firebasedatabase.app",
     "project_id": "glasses-scanner",
     "storage_bucket": "glasses-scanner.firebasestorage.app"
   },
@@ -12,7 +13,28 @@
           "package_name": "com.glassesscan.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "468858760485-38f50sl1rplk4mfo3a4orfiakegfjrsa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.glassesscan.app",
+            "certificate_hash": "99a691c83a14fc5aae4600c550cdfec7f0da75be"
+          }
+        },
+        {
+          "client_id": "468858760485-4nripieq2i1u9cctacrcks10835kcjtv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.glassesscan.app",
+            "certificate_hash": "0050ed6b34a90333201cad2efef8c437d3fcab4b"
+          }
+        },
+        {
+          "client_id": "468858760485-dpir2j05fpvcocrb83bnied9ghj86h3v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": ""
@@ -20,7 +42,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "468858760485-dpir2j05fpvcocrb83bnied9ghj86h3v.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

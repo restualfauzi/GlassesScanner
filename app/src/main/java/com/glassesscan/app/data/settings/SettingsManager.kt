@@ -23,6 +23,13 @@ class SettingsManager(private val context: Context) {
     private val IGNORED_DEVICES_KEY = stringPreferencesKey("ignored_devices")
     private val SCAN_SENSITIVITY_KEY = stringPreferencesKey("scan_sensitivity") // "LOW", "MEDIUM", "HIGH")
     private val STALKER_DETECTION_KEY = booleanPreferencesKey("stalker_detection_enabled")
+    private val SOUND_ALERT_KEY = booleanPreferencesKey("sound_alert_enabled")
+    private val AUTO_SAVE_HISTORY_KEY = booleanPreferencesKey("auto_save_history")
+    private val ECO_SCAN_MODE_KEY = booleanPreferencesKey("eco_scan_mode")
+
+    val ecoScanMode: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[ECO_SCAN_MODE_KEY] ?: false
+    }
 
     val isDarkMode: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[DARK_MODE_KEY] ?: false
@@ -30,6 +37,14 @@ class SettingsManager(private val context: Context) {
 
     val vibrateOnDetect: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[VIBRATE_KEY] ?: true
+    }
+
+    val soundAlertEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[SOUND_ALERT_KEY] ?: true
+    }
+
+    val autoSaveHistory: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[AUTO_SAVE_HISTORY_KEY] ?: true
     }
 
     val zoneSecurityMode: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -132,6 +147,24 @@ class SettingsManager(private val context: Context) {
     suspend fun setStalkerDetectionEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[STALKER_DETECTION_KEY] = enabled
+        }
+    }
+
+    suspend fun setSoundAlertEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[SOUND_ALERT_KEY] = enabled
+        }
+    }
+
+    suspend fun setAutoSaveHistory(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[AUTO_SAVE_HISTORY_KEY] = enabled
+        }
+    }
+
+    suspend fun setEcoScanMode(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[ECO_SCAN_MODE_KEY] = enabled
         }
     }
 

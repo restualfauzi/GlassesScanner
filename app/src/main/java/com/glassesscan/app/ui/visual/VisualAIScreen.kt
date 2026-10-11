@@ -4,7 +4,9 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material3.*
@@ -21,7 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.compose.ui.res.stringResource
 import com.glassesscan.app.R
-import com.glassesscan.app.util.BannerAdView
+import com.glassesscan.app.util.AdMobHelper
 
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.ui.text.style.TextAlign
@@ -57,7 +59,7 @@ fun VisualAIScreen(onBack: () -> Unit, isPremium: Boolean) {
                 title = { Text(stringResource(R.string.nav_visual), style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBackIosNew, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
@@ -67,18 +69,18 @@ fun VisualAIScreen(onBack: () -> Unit, isPremium: Boolean) {
                     }) {
                         Icon(
                             imageVector = if (isTorchEnabled) Icons.Default.FlashOn else Icons.Default.FlashOff,
-                            contentDescription = "Torch",
+                            contentDescription = stringResource(R.string.torch),
                             tint = if (isTorchEnabled) Color(0xFFFFCC00) else MaterialTheme.colorScheme.onSurface
                         )
                     }
                     IconButton(onClick = { showInstructions = !showInstructions }) {
-                        Icon(Icons.Default.Info, contentDescription = "Instructions", tint = if (showInstructions) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                        Icon(Icons.Default.Info, contentDescription = stringResource(R.string.instructions_desc), tint = if (showInstructions) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
                     }
                 }
             )
         },
         bottomBar = {
-            BannerAdView(isPremium = isPremium)
+            AdMobHelper.BannerAdView(isPremium = isPremium)
         }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -150,15 +152,29 @@ fun VisualAIScreen(onBack: () -> Unit, isPremium: Boolean) {
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
-                // Capture Button
-                FloatingActionButton(
+                // Camera Shutter Style Capture Button
+                IconButton(
                     onClick = { 
                         takeEvidencePhoto(context, imageCapture)
                     },
-                    containerColor = Color.White,
-                    contentColor = Color(0xFF007AFF)
+                    modifier = Modifier
+                        .size(72.dp)
+                        .background(Color.White.copy(alpha = 0.3f), CircleShape)
+                        .padding(4.dp)
                 ) {
-                    Icon(Icons.Default.Camera, contentDescription = "Capture Evidence")
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.White, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Camera,
+                            contentDescription = stringResource(R.string.capture_evidence),
+                            tint = Color(0xFF007AFF),
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
                 }
             }
         }
@@ -181,16 +197,19 @@ private fun takeEvidencePhoto(context: android.content.Context, imageCapture: Im
         contentValues
     ).build()
 
+    val photoFailedMsg = context.getString(R.string.photo_failed)
+    val evidenceSavedMsg = context.getString(R.string.evidence_saved)
+
     imageCapture.takePicture(
         outputOptions,
         ContextCompat.getMainExecutor(context),
         object : ImageCapture.OnImageSavedCallback {
             override fun onError(exc: ImageCaptureException) {
-                android.widget.Toast.makeText(context, "Photo failed: ${exc.message}", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(context, photoFailedMsg.format(exc.message), android.widget.Toast.LENGTH_SHORT).show()
             }
 
             override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                android.widget.Toast.makeText(context, "Evidence Saved to Gallery", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(context, evidenceSavedMsg, android.widget.Toast.LENGTH_SHORT).show()
             }
         }
     )

@@ -1,6 +1,7 @@
 package com.glassesscan.app.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.TipsAndUpdates
 import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.AssignmentTurnedIn
 import androidx.compose.material.icons.filled.Map
@@ -21,4 +22,6 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector?
     object TermsOfService : Screen("tos", "Ketentuan Layanan")
     object DeviceLibrary : Screen("device_library", "Device Library", Icons.Default.AutoStories)
     object Audit : Screen("audit", "Privacy Audit", Icons.Default.AssignmentTurnedIn)
+    object SafetyTips : Screen("safety_tips", "Safety Tips", Icons.Default.TipsAndUpdates)
+    object Login : Screen("login", "Account Sign In")
 }

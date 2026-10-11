@@ -1,7 +1,10 @@
 package com.glassesscan.app.util
 
+import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.res.AssetManager
+import android.content.res.Resources
 import android.os.Build
 import android.os.LocaleList
 import java.util.*
@@ -25,6 +28,23 @@ object LocaleUtils {
             context
         }
         
-        return ContextWrapper(newContext)
+        return LocalizedContextWrapper(base = context, localizedContext = newContext)
     }
+
+    private class LocalizedContextWrapper(
+        base: Context,
+        private val localizedContext: Context
+    ) : ContextWrapper(base) {
+        override fun getResources(): Resources = localizedContext.resources
+        override fun getAssets(): AssetManager = localizedContext.assets
+    }
+}
+
+fun Context.findActivity(): Activity? {
+    var ctx = this
+    while (ctx is ContextWrapper) {
+        if (ctx is Activity) return ctx
+        ctx = ctx.baseContext
+    }
+    return null
 }

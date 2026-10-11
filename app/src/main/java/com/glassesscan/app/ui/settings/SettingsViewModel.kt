@@ -27,6 +27,24 @@ class SettingsViewModel(
         initialValue = true
     )
 
+    val soundAlertEnabled: StateFlow<Boolean> = settingsManager.soundAlertEnabled.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = true
+    )
+
+    val autoSaveHistory: StateFlow<Boolean> = settingsManager.autoSaveHistory.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = true
+    )
+
+    val ecoScanMode: StateFlow<Boolean> = settingsManager.ecoScanMode.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = false
+    )
+
     val zoneSecurityMode: StateFlow<Boolean> = settingsManager.zoneSecurityMode.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -37,12 +55,6 @@ class SettingsViewModel(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = false
-    )
-
-    val languageCode: StateFlow<String> = settingsManager.languageCode.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = "en"
     )
 
     val scanSensitivity: StateFlow<String> = settingsManager.scanSensitivity.stateIn(
@@ -75,6 +87,24 @@ class SettingsViewModel(
         }
     }
 
+    fun setSoundAlertEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsManager.setSoundAlertEnabled(enabled)
+        }
+    }
+
+    fun setAutoSaveHistory(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsManager.setAutoSaveHistory(enabled)
+        }
+    }
+
+    fun setEcoScanMode(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsManager.setEcoScanMode(enabled)
+        }
+    }
+
     fun setZoneSecurityMode(enabled: Boolean) {
         viewModelScope.launch {
             settingsManager.setZoneSecurityMode(enabled)
@@ -84,12 +114,6 @@ class SettingsViewModel(
     fun setPremium(enabled: Boolean) {
         viewModelScope.launch {
             settingsManager.setPremium(enabled)
-        }
-    }
-
-    fun setLanguage(code: String) {
-        viewModelScope.launch {
-            settingsManager.setLanguage(code)
         }
     }
 

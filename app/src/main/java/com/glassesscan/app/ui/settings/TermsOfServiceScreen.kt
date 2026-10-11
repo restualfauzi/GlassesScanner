@@ -21,10 +21,10 @@ fun TermsOfServiceScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Terms of Service", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.tos_main_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBackIosNew, contentDescription = stringResource(R.string.back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
@@ -41,12 +41,12 @@ fun TermsOfServiceScreen(onBack: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(
-                text = "Terms of Service for Glasses Scanner",
+                text = stringResource(R.string.tos_main_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Effective Date: August 5, 2026",
+                text = stringResource(R.string.tos_effective_date),
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.Gray
             )
@@ -54,44 +54,44 @@ fun TermsOfServiceScreen(onBack: () -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
             
             LegalSection(
-                "1. Acceptance of Terms",
-                "By downloading or using Glasses Scanner, you agree to be bound by these terms. If you do not agree, do not use the application."
+                stringResource(R.string.tos_section_1_title),
+                stringResource(R.string.tos_section_1_desc)
             )
             
             LegalSection(
-                "2. License & Use",
-                "We grant you a personal, non-transferable license to use the app for personal, non-commercial purposes. You may not decompile, reverse engineer, or attempt to extract the source code of the app."
+                stringResource(R.string.tos_section_2_title),
+                stringResource(R.string.tos_section_2_desc)
             )
             
             LegalSection(
-                "3. Disclaimer of Warranties",
-                "Glasses Scanner is provided 'AS IS' and 'AS AVAILABLE'. We do not guarantee 100% accuracy in detecting smart glasses. Environmental factors, signal interference, and hardware limitations may affect performance. Use this tool as a secondary aid only."
+                stringResource(R.string.tos_section_3_title),
+                stringResource(R.string.tos_section_3_desc)
             )
             
             LegalSection(
-                "4. Limitation of Liability",
-                "Circle Mesh Limited shall not be liable for any indirect, incidental, or consequential damages resulting from the use or inability to use the application, including but not limited to privacy breaches occurring despite the use of the app."
+                stringResource(R.string.tos_section_4_title),
+                stringResource(R.string.tos_section_4_desc)
             )
             
             LegalSection(
-                "5. User Responsibility",
-                "You are responsible for complying with local laws regarding privacy and surveillance. Glasses Scanner should not be used to harass, stalk, or infringe upon the legal rights of others."
+                stringResource(R.string.tos_section_5_title),
+                stringResource(R.string.tos_section_5_desc)
             )
             
             LegalSection(
-                "6. Intellectual Property",
-                "All app designs, logic, branding, and graphics are the exclusive property of Circle Mesh Limited."
+                stringResource(R.string.tos_section_6_title),
+                stringResource(R.string.tos_section_6_desc)
             )
             
             LegalSection(
-                "7. Subscription & Payments",
-                "Subscriptions are managed through Google Play. Prices are localized and subject to change with notice. You can cancel through your Google Account settings at any time."
+                stringResource(R.string.tos_section_7_title),
+                stringResource(R.string.tos_section_7_desc)
             )
 
             Spacer(modifier = Modifier.height(48.dp))
             
             Text(
-                text = "© 2026 Circle Mesh Limited. All rights reserved.",
+                text = stringResource(R.string.privacy_copyright),
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.Gray,
                 modifier = Modifier.padding(bottom = 32.dp)

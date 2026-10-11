@@ -41,12 +41,12 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(
-                text = "Privacy Policy for Glasses Scanner",
+                text = stringResource(R.string.privacy_policy_main_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Last updated: August 5, 2026",
+                text = stringResource(R.string.privacy_last_updated),
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.Gray
             )
@@ -54,44 +54,44 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
             
             PrivacyContentSection(
-                "1. Data Collection",
-                "Glasses Scanner is designed with a 'Privacy-First' philosophy. We do not collect, store, or transmit any personal identification information (PII) to external servers. All scanning data remains strictly on your local device."
+                stringResource(R.string.privacy_section_1_title),
+                stringResource(R.string.privacy_section_1_desc)
             )
             
             PrivacyContentSection(
-                "2. Bluetooth & Wi-Fi Usage",
-                "The app requires Bluetooth and Wi-Fi permissions to perform real-time signal analysis. This data is used solely to identify the proximity of smart glasses and hidden recording devices. Signal data is never shared with third parties."
+                stringResource(R.string.privacy_section_2_title),
+                stringResource(R.string.privacy_section_2_desc)
             )
             
             PrivacyContentSection(
-                "3. Location Data",
-                "Android requires 'Fine Location' access to perform Bluetooth Low Energy (BLE) scanning. While the app records the coordinates of detections for your personal 'Map' feature, this data is stored locally in an encrypted format and is never uploaded or tracked by Circle Mesh Limited."
+                stringResource(R.string.privacy_section_3_title),
+                stringResource(R.string.privacy_section_3_desc)
             )
             
             PrivacyContentSection(
-                "4. Camera Access",
-                "Camera access is only required for the 'AI Visual Scan' feature to help you manually detect recording LEDs. The app does not record, save, or transmit any images or videos from your camera."
+                stringResource(R.string.privacy_section_4_title),
+                stringResource(R.string.privacy_section_4_desc)
             )
             
             PrivacyContentSection(
-                "5. Third-Party Services",
-                "We use Google AdMob for monetization. AdMob may collect device identifiers to serve personalized ads (unless you are a Premium user). Please refer to Google\\'s Privacy Policy for more details."
+                stringResource(R.string.privacy_section_5_title),
+                stringResource(R.string.privacy_section_5_desc)
             )
             
             PrivacyContentSection(
-                "6. Data Retention",
-                "Since all data is stored locally, we do not have a retention period for your data on our servers. You can delete your detection history at any time through the 'Clear All' button in the History tab. Uninstalling the app will permanently remove all local data."
+                stringResource(R.string.privacy_section_6_title),
+                stringResource(R.string.privacy_section_6_desc)
             )
             
             PrivacyContentSection(
-                "7. Contact Us",
-                "If you have any questions regarding this policy or our privacy practices, please contact us at support@circlemesh.site. Developed by Circle Mesh Limited."
+                stringResource(R.string.privacy_section_7_title),
+                stringResource(R.string.privacy_section_7_desc)
             )
 
             Spacer(modifier = Modifier.height(48.dp))
             
             Text(
-                text = "© 2026 Circle Mesh Limited. All rights reserved.",
+                text = stringResource(R.string.privacy_copyright),
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.Gray,
                 modifier = Modifier.padding(bottom = 32.dp)

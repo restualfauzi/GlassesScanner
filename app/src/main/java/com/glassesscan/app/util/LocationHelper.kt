@@ -11,13 +11,15 @@ import kotlinx.coroutines.withContext
 
 class LocationHelper(context: Context) {
     private val fusedLocationClient: FusedLocationProviderClient =
-        LocationServices.getFusedLocationProviderClient(context)
+        LocationServices.getFusedLocationProviderClient(context.applicationContext)
 
     @SuppressLint("MissingPermission")
     suspend fun getLastLocation(): Location? = withContext(Dispatchers.IO) {
         try {
             Tasks.await(fusedLocationClient.lastLocation)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
+            null
+        } catch (_: Throwable) {
             null
         }
     }

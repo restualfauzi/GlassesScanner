@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.glassesscan.app.data.history.HistoryManager
 import com.glassesscan.app.data.repository.ScannerRepositoryImpl
 import com.glassesscan.app.data.scanner.BleScannerHelper
-
+import com.glassesscan.app.data.scanner.WifiScannerHelper
 import com.glassesscan.app.data.settings.SettingsManager
 import com.glassesscan.app.util.LocationHelper
 
@@ -14,7 +14,8 @@ class ScannerViewModelFactory(private val context: Context) : ViewModelProvider.
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ScannerViewModel::class.java)) {
             val bleScannerHelper = BleScannerHelper(context.applicationContext)
-            val repository = ScannerRepositoryImpl(bleScannerHelper)
+            val wifiScannerHelper = WifiScannerHelper(context.applicationContext)
+            val repository = ScannerRepositoryImpl(bleScannerHelper, wifiScannerHelper)
             val historyManager = HistoryManager(context.applicationContext)
             val settingsManager = SettingsManager(context.applicationContext)
             val locationHelper = LocationHelper(context.applicationContext)

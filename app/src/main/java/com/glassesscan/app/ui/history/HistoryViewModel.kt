@@ -31,6 +31,7 @@ class HistoryViewModel(
     fun updateDeviceTag(address: String, tag: String) {
         viewModelScope.launch {
             settingsManager.setDeviceTag(address, tag)
+            historyManager.updateDeviceTag(address, tag)
         }
     }
 

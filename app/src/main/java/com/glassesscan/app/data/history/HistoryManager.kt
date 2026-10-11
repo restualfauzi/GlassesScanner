@@ -18,7 +18,8 @@ class HistoryManager(private val context: Context) {
     val history: Flow<List<DetectedDevice>> = context.dataStore.data.map { preferences ->
         val json = preferences[HISTORY_KEY] ?: "[]"
         try {
-            Json.decodeFromString<List<DetectedDevice>>(json)
+            val list = Json.decodeFromString<List<DetectedDevice>>(json)
+            list.distinctBy { it.address }
         } catch (e: Exception) {
             emptyList()
         }
@@ -33,13 +34,31 @@ class HistoryManager(private val context: Context) {
                 mutableListOf()
             }
             
-            // Avoid duplicates of the same address in history if they are recent? 
-            // Or just keep adding with timestamp.
+            // Deduplicate: Remove previous entry with the same MAC address
+            currentList.removeAll { it.address == device.address }
+            
+            // Add latest detection at top of list
             currentList.add(0, device)
             
             // Limit history to 50 items
             val limitedList = currentList.take(50)
             preferences[HISTORY_KEY] = Json.encodeToString(limitedList)
+        }
+    }
+
+    suspend fun updateDeviceTag(address: String, tag: String) {
+        context.dataStore.edit { preferences ->
+            val currentJson = preferences[HISTORY_KEY] ?: "[]"
+            val currentList = try {
+                Json.decodeFromString<List<DetectedDevice>>(currentJson).toMutableList()
+            } catch (e: Exception) {
+                mutableListOf()
+            }
+            
+            val updatedList = currentList.map {
+                if (it.address == address) it.copy(customTag = if (tag.isBlank()) null else tag) else it
+            }
+            preferences[HISTORY_KEY] = Json.encodeToString(updatedList)
         }
     }
 

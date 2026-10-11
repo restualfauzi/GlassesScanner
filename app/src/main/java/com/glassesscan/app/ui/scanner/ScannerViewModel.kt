@@ -25,7 +25,11 @@ data class ScannerUiState(
     val stalkerDetected: DetectedDevice? = null,
     val selectedDevice: DetectedDevice? = null,
     val errorMessage: String? = null,
-    val soundAlertEnabled: Boolean = false
+    val soundAlertEnabled: Boolean = true,
+    val vibrateOnDetect: Boolean = true,
+    val autoSaveHistory: Boolean = true,
+    val safetyScore: Int = 100,
+    val safetyStatus: String = "SAFE"
 )
 
 class ScannerViewModel(
@@ -47,6 +51,104 @@ class ScannerViewModel(
     val deviceAngles: Map<String, Float> get() = _deviceAngles
     val deviceDisplayRssi: Map<String, Float> get() = _deviceDisplayRssi
 
+    fun injectSimulatedDevice(device: DetectedDevice) {
+        _uiState.update { state ->
+            val updated = state.detectedDevices.toMutableList()
+            updated.removeAll { it.address == device.address }
+            updated.add(0, device)
+            state.copy(
+                detectedDevices = updated, 
+                metaGlassesDetected = true,
+                isScanning = true
+            )
+        }
+        viewModelScope.launch {
+            try {
+                historyManager.saveDetection(device)
+            } catch (_: Exception) {}
+        }
+    }
+
+    fun injectPlayStoreDemoDevices() {
+        val demoDevices = listOf(
+            DetectedDevice(
+                address = "00:11:22:33:44:55",
+                name = "Ray-Ban Meta (Gen 2)",
+                rssi = -52,
+                isMetaGlasses = true,
+                latitude = 40.7580, // Times Square, NY, USA
+                longitude = -73.9855,
+                rssiHistory = listOf(-75, -68, -60, -55, -52)
+            ),
+            DetectedDevice(
+                address = "AA:BB:CC:DD:EE:FF",
+                name = "Spy HD Camera Glasses",
+                rssi = -46,
+                isMetaGlasses = true,
+                isZoneAlert = true,
+                latitude = 40.7614, // 5th Ave / MoMA, NY, USA
+                longitude = -73.9776,
+                rssiHistory = listOf(-65, -58, -50, -48, -46)
+            ),
+            DetectedDevice(
+                address = "11:22:33:44:55:66",
+                name = "XREAL Air 2 Ultra",
+                rssi = -64,
+                isMetaGlasses = true,
+                latitude = 40.7527, // Grand Central, NY, USA
+                longitude = -73.9772,
+                rssiHistory = listOf(-80, -75, -70, -68, -64)
+            ),
+            DetectedDevice(
+                address = "22:33:44:55:66:77",
+                name = "Even Realities G1",
+                rssi = -72,
+                isMetaGlasses = true,
+                latitude = 40.7484, // Empire State Building, NY, USA
+                longitude = -73.9857,
+                rssiHistory = listOf(-88, -82, -78, -75, -72)
+            ),
+            DetectedDevice(
+                address = "33:44:55:66:77:88",
+                name = "Snap Spectacles 4",
+                rssi = -78,
+                isMetaGlasses = true,
+                latitude = 40.7648, // Central Park, NY, USA
+                longitude = -73.9735,
+                rssiHistory = listOf(-92, -88, -85, -80, -78)
+            )
+        )
+
+        // Preset radar angles for clean screenshot visualization
+        _deviceAngles["00:11:22:33:44:55"] = 45f
+        _deviceAngles["AA:BB:CC:DD:EE:FF"] = 135f
+        _deviceAngles["11:22:33:44:55:66"] = 210f
+        _deviceAngles["22:33:44:55:66:77"] = 300f
+        _deviceAngles["33:44:55:66:77:88"] = 340f
+
+        demoDevices.forEach { device ->
+            _deviceDisplayRssi[device.address] = device.rssi.toFloat()
+        }
+
+        _uiState.update { state ->
+            state.copy(
+                detectedDevices = demoDevices,
+                metaGlassesDetected = true,
+                isScanning = true,
+                safetyScore = 42,
+                safetyStatus = "THREAT DETECTED"
+            )
+        }
+
+        viewModelScope.launch {
+            demoDevices.forEach { device ->
+                try {
+                    historyManager.saveDetection(device)
+                } catch (_: Exception) {}
+            }
+        }
+    }
+
     private val toneGenerator = android.media.ToneGenerator(android.media.AudioManager.STREAM_ALARM, 100)
 
     init {
@@ -63,6 +165,25 @@ class ScannerViewModel(
         viewModelScope.launch {
             settingsManager.scanSensitivity.collect { sensitivity ->
                 _uiState.update { it.copy(scanSensitivity = sensitivity) }
+            }
+        }
+        viewModelScope.launch {
+            settingsManager.vibrateOnDetect.collect { vibrate ->
+                _uiState.update { it.copy(vibrateOnDetect = vibrate) }
+            }
+        }
+        viewModelScope.launch {
+            settingsManager.soundAlertEnabled.collect { sound ->
+                _uiState.update { it.copy(soundAlertEnabled = sound) }
+                if (!sound) {
+                    soundJob?.cancel()
+                    soundJob = null
+                }
+            }
+        }
+        viewModelScope.launch {
+            settingsManager.autoSaveHistory.collect { autoSave ->
+                _uiState.update { it.copy(autoSaveHistory = autoSave) }
             }
         }
     }
@@ -109,7 +230,6 @@ class ScannerViewModel(
                 }
                 .collect { devices ->
                     val now = System.currentTimeMillis()
-                    val shouldVibrate = settingsManager.vibrateOnDetect.first()
                     val isStalkerDetectionEnabled = settingsManager.stalkerDetectionEnabled.first()
                     val sensitivity = _uiState.value.scanSensitivity
                     
@@ -143,15 +263,16 @@ class ScannerViewModel(
 
                     // Stalker Detection Logic
                     if (isStalkerDetectionEnabled) {
-                        processedDevices.filter { it.isMetaGlasses }.forEach { device ->
+                        processedDevices.filter { it.isMetaGlasses && !dismissedStalkers.contains(it.address) }.forEach { device ->
                             val historyTimes = deviceDiscoveryHistory.getOrPut(device.address) { mutableListOf() }
                             historyTimes.add(now)
                             
                             // Remove history older than 30 mins
                             historyTimes.removeAll { now - it > 30 * 60 * 1000 }
                             
-                            // If seen in at least 3 distinct scan cycles over more than 5 minutes
-                            if (historyTimes.size > 3 && (now - historyTimes.first() > 5 * 60 * 1000)) {
+                            // Stalker Defense Logic: Seen over 15 minutes OR multiple times.
+                            // Real app would also check distance > 1km using LocationHelper here
+                            if (historyTimes.size > 5 && (now - historyTimes.first() > 15 * 60 * 1000)) {
                                 _uiState.update { it.copy(stalkerDetected = device) }
                             }
                         }
@@ -169,7 +290,7 @@ class ScannerViewModel(
                             viewModelScope.launch(Dispatchers.IO) {
                                 try {
                                     val location = locationHelper.getLastLocation()
-                                    val isZoneMode = _uiState.value.zoneSecurityMode
+                                    val isZoneMode = state.zoneSecurityMode
                                     val isThreat = device.isMetaGlasses || isZoneMode
                                     
                                     val deviceWithLoc = device.copy(
@@ -177,9 +298,12 @@ class ScannerViewModel(
                                         longitude = location?.longitude,
                                         isZoneAlert = isZoneMode && device.isMetaGlasses
                                     )
-                                    historyManager.saveDetection(deviceWithLoc)
+                                    if (state.autoSaveHistory) {
+                                        historyManager.saveDetection(deviceWithLoc)
+                                        com.glassesscan.app.util.RealtimeDbManager.syncDetectionToCloud(deviceWithLoc)
+                                    }
                                     
-                                    if (shouldVibrate && isThreat) {
+                                    if (state.vibrateOnDetect && isThreat) {
                                         withContext(Dispatchers.Main) {
                                             triggerVibration()
                                         }
@@ -191,10 +315,24 @@ class ScannerViewModel(
 
                     _uiState.update { 
                         val metaCount = processedDevices.count { d -> d.isMetaGlasses && !it.ignoredDevices.contains(d.address) }
+                        
+                        val score = when {
+                            it.stalkerDetected != null -> 20
+                            metaCount > 0 -> (100 - (metaCount * 15)).coerceIn(30, 70)
+                            processedDevices.isNotEmpty() -> 90
+                            else -> 100
+                        }
+                        
+                        val status = when {
+                            score <= 30 -> "THREAT DETECTED"
+                            score <= 75 -> "CAUTION"
+                            else -> "SAFE"
+                        }
+
                         if (it.isScanning) {
                             com.glassesscan.app.service.GlassesScannerWidget.updateAllWidgets(
                                 context,
-                                if (metaCount > 0) "THREAT DETECTED" else "SYSTEM ACTIVE",
+                                status,
                                 if (metaCount > 0) "$metaCount glasses nearby" else "Environment Safe"
                             )
                         }
@@ -202,7 +340,16 @@ class ScannerViewModel(
                         it.copy(
                             detectedDevices = processedDevices,
                             metaGlassesDetected = hasMeta,
-                            wifiDirectActive = processedDevices.any { d -> d.name?.contains("DIRECT-", ignoreCase = true) == true },
+                            safetyScore = score,
+                            safetyStatus = status,
+                            wifiDirectActive = processedDevices.any { d -> 
+                                val name = d.name ?: ""
+                                name.contains("DIRECT-", ignoreCase = true) ||
+                                name.contains("Meta-", ignoreCase = true) ||
+                                name.contains("Cam", ignoreCase = true) ||
+                                name.contains("P2P", ignoreCase = true) ||
+                                name.contains("WiFi", ignoreCase = true)
+                            },
                             selectedDevice = processedDevices.find { d -> d.address == it.selectedDevice?.address }
                         ) 
                     }
@@ -222,19 +369,16 @@ class ScannerViewModel(
 
     fun toggleSoundAlert() {
         val newState = !_uiState.value.soundAlertEnabled
-        _uiState.update { it.copy(soundAlertEnabled = newState) }
-        if (newState && _uiState.value.isScanning) {
-            startSoundJob()
-        } else {
-            soundJob?.cancel()
-            soundJob = null
+        viewModelScope.launch {
+            settingsManager.setSoundAlertEnabled(newState)
         }
     }
 
     private fun startSoundJob() {
+        if (!_uiState.value.soundAlertEnabled) return
         soundJob?.cancel()
         soundJob = viewModelScope.launch {
-            while (isActive) {
+            while (isActive && _uiState.value.soundAlertEnabled) {
                 val devices = _uiState.value.detectedDevices
                 val metaDevices = devices.filter { it.isMetaGlasses && !_uiState.value.ignoredDevices.contains(it.address) }
                 
@@ -255,11 +399,19 @@ class ScannerViewModel(
     fun updateDeviceTag(address: String, tag: String) {
         viewModelScope.launch {
             settingsManager.setDeviceTag(address, tag)
-            val tags = settingsManager.deviceTags.first()
+            historyManager.updateDeviceTag(address, tag)
+            val updatedTag = if (tag.isBlank()) null else tag
             _uiState.update { state ->
-                state.copy(detectedDevices = state.detectedDevices.map { 
-                    if (it.address == address) it.copy(customTag = tags[address]) else it
-                })
+                val updatedDevices = state.detectedDevices.map { 
+                    if (it.address == address) it.copy(customTag = updatedTag) else it
+                }
+                val updatedSelected = state.selectedDevice?.let {
+                    if (it.address == address) it.copy(customTag = updatedTag) else it
+                }
+                state.copy(
+                    detectedDevices = updatedDevices,
+                    selectedDevice = updatedSelected
+                )
             }
         }
     }
@@ -285,7 +437,14 @@ class ScannerViewModel(
         }
     }
 
+    private val dismissedStalkers = mutableSetOf<String>()
+
     fun dismissStalkerAlert() {
+        val currentStalker = _uiState.value.stalkerDetected
+        if (currentStalker != null) {
+            dismissedStalkers.add(currentStalker.address)
+            deviceDiscoveryHistory.remove(currentStalker.address)
+        }
         _uiState.update { it.copy(stalkerDetected = null) }
     }
 
